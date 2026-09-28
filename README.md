@@ -2,6 +2,8 @@
 
 A mobile-first web app for tracking scores in a 4-player Hong Kong (Cantonese) Mahjong game. One person at the table runs it on their phone during a live game: tap in the faan for each winning hand, and it works out who pays whom, keeps running totals, tracks wind/dealer rotation, and (optionally) converts points to money.
 
+**Use it now: https://ashleykchan.github.io/mahjong-point-counter/**
+
 ## Features
 
 - **Customizable payout rules** — editable faan-to-points table, min/max faan, self-draw and deal-in multipliers, and a draw-behavior setting, all saved as reusable rule set presets.
@@ -12,7 +14,9 @@ A mobile-first web app for tracking scores in a 4-player Hong Kong (Cantonese) M
 - **Game summary** — final standings, a minimal "settle up" list of who pays whom, and per-player/game stats (wins, self-draws, deal-ins, biggest hand, times as dealer, etc.) when you end a game.
 - Game state and rule sets persist in `localStorage`, so a refresh or backgrounded phone doesn't lose progress.
 
-## Getting started
+## Local development
+
+No install needed to just use the app — see the link above. To work on the code instead:
 
 ```bash
 npm install
