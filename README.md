@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# Mahjong Point Counter
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A mobile-first web app for tracking scores in a 4-player Hong Kong (Cantonese) Mahjong game. One person at the table runs it on their phone during a live game: tap in the faan for each winning hand, and it works out who pays whom, keeps running totals, tracks wind/dealer rotation, and (optionally) converts points to money.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Customizable payout rules** — editable faan-to-points table, min/max faan, self-draw and deal-in multipliers, and a draw-behavior setting, all saved as reusable rule set presets.
+- **Record Hand flow** — tap the winner, how they won (self-drawn or off a discard), who discarded, and the faan via a large stepper, with a full payout preview before confirming.
+- **Wind & dealer tracking** — a banner shows the prevailing wind, hand number, dealer, and dealer repeat count; player cards show each seat's wind and highlight the dealer. Rotation follows standard rules (dealer stays on a win, passes on a loss, wind advances after 4 dealers), with a manual "Adjust Wind/Dealer" override if the table gets out of sync.
+- **Money per point** — optional; set a dollar value per point and money totals appear everywhere alongside points.
+- **Round history** — every hand and adjustment, newest first, with a one-tap undo that also rolls back score, wind, and dealer state.
+- **Game summary** — final standings, a minimal "settle up" list of who pays whom, and per-player/game stats (wins, self-draws, deal-ins, biggest hand, times as dealer, etc.) when you end a game.
+- Game state and rule sets persist in `localStorage`, so a refresh or backgrounded phone doesn't lose progress.
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Open the printed local URL, or run `npm run dev -- --host` to reach it from your phone on the same Wi-Fi network.
+
+## Other scripts
+
+```bash
+npm run build    # type-check and build for production
+npm run preview  # preview the production build locally
+npm run lint     # run oxlint
+```
+
+## Tech stack
+
+Vite, React, TypeScript, and Tailwind CSS — no backend; everything runs and persists client-side.
