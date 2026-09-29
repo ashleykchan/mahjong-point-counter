@@ -86,16 +86,16 @@ describe("buildGameSummaryText", () => {
 
     expect(text).toBe(
       [
-        `\u{1F004} Mahjong · ${expectedDate(g.createdAt)}`,
+        `\u{1F004} MAHJONG · ${expectedDate(g.createdAt).toUpperCase()}`,
         "3 hands played",
         "",
-        "\u{1F3C6} Leaderboard",
+        "\u{1F3C6} LEADERBOARD",
         "\u{1F947} Alex · +200 pts · +$50",
         "\u{1F948} Jordan · +100 pts · +$25",
         "\u{1F949} Sam · even",
         "4️⃣ Taylor · -300 pts · -$75",
         "",
-        "\u{1F4B8} Payouts",
+        "\u{1F4B8} PAYOUTS",
         "Taylor → Alex: $50",
         "Taylor → Jordan: $25",
         "",
@@ -123,16 +123,16 @@ describe("buildGameSummaryText", () => {
 
     expect(text).toBe(
       [
-        `\u{1F004} Mahjong · ${expectedDate(g.createdAt)}`,
+        `\u{1F004} MAHJONG · ${expectedDate(g.createdAt).toUpperCase()}`,
         "3 hands played",
         "",
-        "\u{1F3C6} Leaderboard",
+        "\u{1F3C6} LEADERBOARD",
         "\u{1F947} Alex · +200 pts",
         "\u{1F948} Jordan · +100 pts",
         "\u{1F949} Sam · even",
         "4️⃣ Taylor · -300 pts",
         "",
-        "\u{1F4B8} Payouts",
+        "\u{1F4B8} PAYOUTS",
         "Taylor → Alex: 200 pts",
         "Taylor → Jordan: 100 pts",
         "",
@@ -177,16 +177,16 @@ describe("buildGameSummaryText", () => {
 
     expect(text).toBe(
       [
-        `\u{1F004} Mahjong · ${expectedDate(g.createdAt)}`,
+        `\u{1F004} MAHJONG · ${expectedDate(g.createdAt).toUpperCase()}`,
         "0 hands played",
         "",
-        "\u{1F3C6} Leaderboard",
+        "\u{1F3C6} LEADERBOARD",
         "\u{1F947} P1 · even",
         "\u{1F947} P2 · even",
         "\u{1F947} P3 · even",
         "\u{1F947} P4 · even",
         "",
-        "\u{1F4B8} Payouts",
+        "\u{1F4B8} PAYOUTS",
         "Everyone broke even \u{1F389}",
       ].join("\n"),
     );

@@ -37,6 +37,7 @@ function AppShell() {
   const [justCompletedCycle, setJustCompletedCycle] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
   const [windChangedNotice, setWindChangedNotice] = useState(false);
+  const [historyEditingMode, setHistoryEditingMode] = useState(false);
 
   if (view === "rules") {
     return (
@@ -73,7 +74,10 @@ function AppShell() {
     return (
       <RoundHistoryScreen
         game={game}
-        onClose={() => setView("scoreboard")}
+        onClose={() => {
+          setHistoryEditingMode(false);
+          setView("scoreboard");
+        }}
         onUndoLast={undoLastRound}
         onEditRound={(roundId) => {
           setEditingRoundId(roundId);
@@ -84,6 +88,8 @@ function AppShell() {
           deleteRound(roundId);
           setWindChangedNotice(changed);
         }}
+        editingMode={historyEditingMode}
+        onToggleEditingMode={() => setHistoryEditingMode((prev) => !prev)}
         windChangedNotice={windChangedNotice}
         onDismissWindChangedNotice={() => setWindChangedNotice(false)}
       />

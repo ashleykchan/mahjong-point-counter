@@ -1,7 +1,7 @@
 import type { GameState, PlayerId } from "../types";
 import { computeStandings } from "./scoring";
 import { settleUp } from "./settleUp";
-import { pointsToMoney, round2 } from "./money";
+import { pointsToMoney, round2, signOf, formatCompactMagnitude as formatMagnitude } from "./money";
 
 const PLACE_EMOJIS = ["\u{1F947}", "\u{1F948}", "\u{1F949}", "4️⃣"]; // 🥇 🥈 🥉 4️⃣
 
@@ -11,18 +11,6 @@ function formatDate(timestampMs: number): string {
     month: "short",
     day: "numeric",
   });
-}
-
-/** Whole dollars with no decimals ($25); cents only when the amount isn't a whole number ($12.50). */
-function formatMagnitude(n: number): string {
-  const rounded = round2(Math.abs(n));
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
-}
-
-function signOf(n: number): "+" | "-" | "" {
-  if (n > 0) return "+";
-  if (n < 0) return "-";
-  return "";
 }
 
 interface NetResult {
@@ -101,11 +89,11 @@ export function buildGameSummaryText(game: GameState): string {
   const handsPlayed = game.rounds.filter((r) => !r.isAdjustment).length;
 
   const header = [
-    `\u{1F004} Mahjong · ${formatDate(game.createdAt)}`,
+    `\u{1F004} MAHJONG · ${formatDate(game.createdAt).toUpperCase()}`,
     `${handsPlayed} hand${handsPlayed === 1 ? "" : "s"} played`,
   ];
-  const leaderboard = ["\u{1F3C6} Leaderboard", ...buildLeaderboardLines(game)];
-  const payouts = ["\u{1F4B8} Payouts", ...buildPayoutLines(game)];
+  const leaderboard = ["\u{1F3C6} LEADERBOARD", ...buildLeaderboardLines(game)];
+  const payouts = ["\u{1F4B8} PAYOUTS", ...buildPayoutLines(game)];
 
   const sections = [header, leaderboard, payouts];
 
