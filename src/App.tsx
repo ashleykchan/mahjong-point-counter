@@ -150,11 +150,11 @@ function AppShell() {
       <RecordHandScreen
         game={game}
         onCancel={() => setView("scoreboard")}
-        onConfirm={(winnerId: PlayerId, method: WinMethod, faan: number, discarderId: PlayerId | undefined) => {
+        onConfirm={(winnerId: PlayerId, method: WinMethod, faan: number, discarderId: PlayerId | undefined, faanCalc) => {
           const windBefore = getCurrentWind(game);
           const windAfter = nextWindState(windBefore, game.players, { isDraw: false, winnerId }, game.ruleSet.dealerStaysOnDraw);
           const payouts = computePayouts(game.ruleSet, game.players, winnerId, method, faan, discarderId);
-          recordHand(winnerId, method, faan, discarderId, payouts);
+          recordHand(winnerId, method, faan, discarderId, payouts, faanCalc);
           setView("scoreboard");
           if (completedFullCycle({ windBefore, windAfter })) setJustCompletedCycle(true);
         }}

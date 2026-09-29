@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameState, Player, Round } from "../../types";
 import { formatCompactMagnitude, pointsToMoney, signOf } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
+import { describeCalculation } from "../../lib/faanCalculator";
 import { FixedBottomBar } from "../FixedBottomBar";
 
 interface RoundHistoryScreenProps {
@@ -228,6 +229,9 @@ export function RoundHistoryScreen({
                       <p className="text-sm text-slate-400">No payouts this round</p>
                     ) : (
                       <>
+                        {round.faanCalc && (
+                          <p className="text-sm text-slate-300">{describeCalculation(game.ruleSet, round.faanCalc)}</p>
+                        )}
                         <ul className="flex flex-col gap-1">
                           {round.payouts.map((p, idx) => (
                             <li key={idx} className="flex items-center justify-between text-sm">

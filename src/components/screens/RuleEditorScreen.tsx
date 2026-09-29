@@ -1,7 +1,9 @@
 import { useState } from "react";
-import type { FaanTable, RuleSet } from "../../types";
+import type { FaanTable, HandPattern, RuleSet } from "../../types";
 import { extendTable } from "../../lib/rangeExtend";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { HandPatternsEditor } from "../HandPatternsEditor";
+import { defaultHandPatterns } from "../../lib/faanCalculator";
 
 interface RuleEditorScreenProps {
   initial: RuleSet;
@@ -66,6 +68,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
   const [selfDrawMultiplier, setSelfDrawMultiplier] = useState(initial.selfDrawMultiplier);
   const [dealInMultiplier, setDealInMultiplier] = useState(initial.dealInMultiplier);
   const [dealerStaysOnDraw, setDealerStaysOnDraw] = useState(initial.dealerStaysOnDraw);
+  const [handPatterns, setHandPatterns] = useState<HandPattern[]>(() => initial.handPatterns ?? defaultHandPatterns());
 
   function updateMin(newMin: number) {
     const min = Math.min(Math.max(newMin, FAAN_FLOOR), maxFaan);
@@ -93,6 +96,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
       selfDrawMultiplier,
       dealInMultiplier,
       dealerStaysOnDraw,
+      handPatterns,
     };
   }
 
@@ -197,6 +201,8 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
           </button>
         </div>
       </section>
+
+      <HandPatternsEditor patterns={handPatterns} onChange={setHandPatterns} />
 
       {onDelete && (
         <button
