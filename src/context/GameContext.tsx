@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { GameState, Payout, Player, PlayerId, Round, RuleSet, WindState, WinMethod } from "../types";
+import type { FaanSelection, GameState, Payout, Player, PlayerId, Round, RuleSet, WindState, WinMethod } from "../types";
 import { loadGame, loadRuleSets, saveGame, saveRuleSets } from "../lib/storage";
 import { defaultRuleSet } from "../lib/defaultRules";
+import { withHandPatterns } from "../lib/faanCalculator";
 import { getCurrentWind, nextWindState } from "../lib/wind";
-import { withDeletedRound, withEditedRound, type RoundEdit } from "../lib/rounds";
+import { withDeletedRound, withEditedRound, withUndoneLastRound, type RoundEdit } from "../lib/rounds";
 
 interface GameContextValue {
   game: GameState | null;
@@ -24,6 +25,7 @@ interface GameContextValue {
     faan: number,
     discarderId: PlayerId | undefined,
     payouts: Payout[],
+    faanCalc?: FaanSelection,
   ) => void;
   recordDraw: () => void;
   undoLastRound: () => void;
@@ -42,13 +44,19 @@ function uid(): string {
 }
 
 export function GameProvider({ children }: { children: ReactNode }) {
-  const [game, setGame] = useState<GameState | null>(() => loadGame());
+  const [game, setGame] = useState<GameState | null>(() => {
+    const stored = loadGame();
+    return stored ? { ...stored, ruleSet: withHandPatterns(stored.ruleSet) } : null;
+  });
   const [ruleSets, setRuleSets] = useState<RuleSet[]>(() => {
     const stored = loadRuleSets();
     if (stored.length === 0) return [defaultRuleSet()];
     // Keep the built-in "default" rule set in sync with the current app definition;
-    // any rule set the user created themselves (a different id) is left untouched.
-    return stored.map((r) => (r.id === "default" ? defaultRuleSet() : r));
+    // any rule set the user created themselves (a different id) is left untouched. Hand patterns are the
+    // exception: they're kept, so edits to the default's pattern list survive a reload.
+    return stored.map((r) =>
+      r.id === "default" ? { ...defaultRuleSet(), ...(r.handPatterns && { handPatterns: r.handPatterns }) } : withHandPatterns(r),
+    );
   });
 
   useEffect(() => saveGame(game), [game]);
@@ -73,7 +81,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       finishGame: () => {
         setGame((prev) => (prev ? { ...prev, endedAt: Date.now() } : prev));
       },
-      recordHand: (winnerId, method, faan, discarderId, payouts) => {
+      recordHand: (winnerId, method, faan, discarderId, payouts, faanCalc) => {
         setGame((prev) => {
           if (!prev) return prev;
           const windBefore = getCurrentWind(prev);
@@ -91,6 +99,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             method,
             discarderId,
             faan,
+            faanCalc,
             payouts,
             windBefore,
             windAfter,
@@ -117,7 +126,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       undoLastRound: () => {
         setGame((prev) => {
           if (!prev || prev.rounds.length === 0) return prev;
-          return { ...prev, rounds: prev.rounds.slice(0, -1) };
+          return { ...prev, rounds: withUndoneLastRound(prev) };
         });
       },
       editRound: (roundId, edit) => {

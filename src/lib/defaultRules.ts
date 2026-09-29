@@ -1,4 +1,5 @@
 import type { FaanTable, RuleSet } from "../types";
+import { defaultHandPatterns } from "./faanCalculator";
 
 /** Classic HK "doubling per faan" table: 3 faan = base unit, doubling up to the limit. */
 export function buildDoublingTable(minFaan: number, maxFaan: number, base = 8): FaanTable {
@@ -35,6 +36,7 @@ export function defaultRuleSet(): RuleSet {
     selfDrawMultiplier: 0.5,
     dealInMultiplier: 1,
     dealerStaysOnDraw: true,
+    handPatterns: defaultHandPatterns(),
   };
 }
 
@@ -51,5 +53,6 @@ export function doublingRuleSet(): RuleSet {
     selfDrawMultiplier: 1,
     dealInMultiplier: 1,
     dealerStaysOnDraw: true,
+    handPatterns: defaultHandPatterns(),
   };
 }

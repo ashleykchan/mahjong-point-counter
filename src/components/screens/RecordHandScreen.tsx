@@ -1,13 +1,29 @@
 import { useState } from "react";
-import type { GameState, PlayerId, WinMethod } from "../../types";
+import type { FaanSelection, GameState, PlayerId, WinMethod } from "../../types";
 import { computePayouts, pointsForFaan } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { FaanStepper } from "../FaanStepper";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { FaanCalculatorTable, FaanModeToggle, FaanTotalFooter } from "../FaanCalculator";
+import {
+  applyWinMethod,
+  calculateFaan,
+  describeCalculation,
+  emptySelection,
+  patternsFor,
+  type FaanInputMode,
+} from "../../lib/faanCalculator";
+import { loadFaanInputMode, saveFaanInputMode } from "../../lib/storage";
 
 interface RecordHandScreenProps {
   game: GameState;
-  onConfirm: (winnerId: PlayerId, method: WinMethod, faan: number, discarderId: PlayerId | undefined) => void;
+  onConfirm: (
+    winnerId: PlayerId,
+    method: WinMethod,
+    faan: number,
+    discarderId: PlayerId | undefined,
+    faanCalc: FaanSelection | undefined,
+  ) => void;
   onCancel: () => void;
 }
 
@@ -19,6 +35,20 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
   const [method, setMethod] = useState<WinMethod | null>(null);
   const [discarderId, setDiscarderId] = useState<PlayerId | null>(null);
   const [faan, setFaan] = useState(game.ruleSet.minFaan);
+  const [faanMode, setFaanMode] = useState<FaanInputMode>(loadFaanInputMode);
+  const [selection, setSelection] = useState<FaanSelection>(emptySelection);
+
+  const { minFaan, maxFaan } = game.ruleSet;
+  const calc = calculateFaan(game.ruleSet, selection);
+  const isAutomatic = faanMode === "automatic";
+  const handFaan = isAutomatic ? calc.total : faan;
+
+  function changeFaanMode(mode: FaanInputMode) {
+    // Carry the calculated total over so switching to Manual starts from what was worked out.
+    if (mode === "manual" && isAutomatic) setFaan(Math.min(Math.max(calc.total, minFaan), maxFaan));
+    setFaanMode(mode);
+    saveFaanInputMode(mode);
+  }
 
   const nameOf = (id: PlayerId) => game.players.find((p) => p.id === id)?.name ?? "?";
   const others = game.players.filter((p) => p.id !== winnerId);
@@ -39,6 +69,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
   function chooseMethod(m: WinMethod) {
     setMethod(m);
     setFaan(game.ruleSet.minFaan);
+    setSelection((prev) => applyWinMethod(patternsFor(game.ruleSet), prev, m));
     setStep(m === "discard" ? "discarder" : "faan");
   }
 
@@ -48,7 +79,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
   }
 
   const payouts =
-    winnerId && method ? computePayouts(game.ruleSet, game.players, winnerId, method, faan, discarderId ?? undefined) : [];
+    winnerId && method ? computePayouts(game.ruleSet, game.players, winnerId, method, handFaan, discarderId ?? undefined) : [];
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
@@ -116,18 +147,37 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
       {step === "faan" && winnerId && method && (
         <section className="flex flex-col items-center gap-6">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">How many faan?</h2>
-          <FaanStepper value={faan} min={game.ruleSet.minFaan} max={game.ruleSet.maxFaan} onChange={setFaan} />
-          <p className="text-slate-400">
-            = {pointsForFaan(game.ruleSet, faan)} pts
-            {game.moneyPerPoint > 0 && ` (${formatMoney(pointsToMoney(pointsForFaan(game.ruleSet, faan), game.moneyPerPoint))})`}{" "}
-            {method === "self-draw" ? "from each opponent" : "from discarder"}
-          </p>
-          <button
-            onClick={() => setStep("preview")}
-            className="w-full rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400"
-          >
-            Continue
-          </button>
+          <FaanModeToggle mode={faanMode} onChange={changeFaanMode} />
+          {isAutomatic ? (
+            <>
+              <FaanCalculatorTable ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />
+              <FixedBottomBar className="flex flex-col gap-3">
+                <FaanTotalFooter ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />
+                <button
+                  onClick={() => setStep("preview")}
+                  disabled={calc.belowMin}
+                  className="w-full rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400 disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              </FixedBottomBar>
+            </>
+          ) : (
+            <>
+              <FaanStepper value={faan} min={minFaan} max={maxFaan} onChange={setFaan} />
+              <p className="text-slate-400">
+                = {pointsForFaan(game.ruleSet, faan)} pts
+                {game.moneyPerPoint > 0 && ` (${formatMoney(pointsToMoney(pointsForFaan(game.ruleSet, faan), game.moneyPerPoint))})`}{" "}
+                {method === "self-draw" ? "from each opponent" : "from discarder"}
+              </p>
+              <button
+                onClick={() => setStep("preview")}
+                className="w-full rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400"
+              >
+                Continue
+              </button>
+            </>
+          )}
         </section>
       )}
 
@@ -136,9 +186,10 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Confirm payouts</h2>
           <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
             <p className="mb-3 text-lg font-semibold">
-              {nameOf(winnerId)} wins with {faan} faan
+              {nameOf(winnerId)} wins with {handFaan} faan
               {method === "self-draw" ? " (self-drawn)" : ` off ${nameOf(discarderId!)}'s discard`}
             </p>
+            {isAutomatic && <p className="-mt-2 mb-3 text-sm text-slate-400">{describeCalculation(game.ruleSet, selection)}</p>}
             <ul className="flex flex-col gap-2">
               {payouts.map((p, i) => (
                 <li key={i} className="flex items-center justify-between text-base">
@@ -164,7 +215,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
               Cancel
             </button>
             <button
-              onClick={() => onConfirm(winnerId, method, faan, discarderId ?? undefined)}
+              onClick={() => onConfirm(winnerId, method, handFaan, discarderId ?? undefined, isAutomatic ? selection : undefined)}
               className="flex-1 rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400"
             >
               Confirm

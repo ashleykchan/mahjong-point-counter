@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GameState, PlayerId, Round, WinMethod } from "../../types";
+import type { FaanSelection, GameState, PlayerId, Round, WinMethod } from "../../types";
 import type { RoundEdit } from "../../lib/rounds";
 import { withEditedRound } from "../../lib/rounds";
 import { computeStandings } from "../../lib/scoring";
@@ -7,6 +7,15 @@ import { formatMoney, pointsToMoney } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
 import { FaanStepper } from "../FaanStepper";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { FaanCalculatorTable, FaanModeToggle, FaanTotalFooter } from "../FaanCalculator";
+import {
+  applyWinMethod,
+  calculateFaan,
+  initialFaanInput,
+  patternsFor,
+  type FaanInputMode,
+} from "../../lib/faanCalculator";
+import { loadFaanInputMode, saveFaanInputMode } from "../../lib/storage";
 
 interface EditRoundScreenProps {
   game: GameState;
@@ -24,16 +33,44 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
   const [discarderId, setDiscarderId] = useState<PlayerId | null>(round.discarderId ?? null);
   const [faan, setFaan] = useState(round.faan ?? game.ruleSet.minFaan);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [initialFaan] = useState(() => initialFaanInput(round, loadFaanInputMode()));
+  const [faanMode, setFaanMode] = useState<FaanInputMode>(initialFaan.mode);
+  const [selection, setSelection] = useState<FaanSelection>(() =>
+    applyWinMethod(patternsFor(game.ruleSet), initialFaan.selection, round.method ?? null),
+  );
+
+  const { minFaan, maxFaan } = game.ruleSet;
+  const calc = calculateFaan(game.ruleSet, selection);
+  const isAutomatic = faanMode === "automatic";
+
+  function changeFaanMode(mode: FaanInputMode) {
+    // Carry the calculated total over so switching to Manual starts from what was worked out.
+    if (mode === "manual" && isAutomatic) setFaan(Math.min(Math.max(calc.total, minFaan), maxFaan));
+    setFaanMode(mode);
+    saveFaanInputMode(mode);
+  }
 
   const nameOf = (id?: PlayerId) => game.players.find((p) => p.id === id)?.name ?? "?";
   const dealerName = nameOf(game.players[round.windBefore.dealerIndex]?.id);
   const others = game.players.filter((p) => p.id !== winnerId);
 
-  const isValid = isDraw || (winnerId !== null && method !== null && (method === "self-draw" || discarderId !== null));
+  const isValid =
+    isDraw ||
+    (winnerId !== null &&
+      method !== null &&
+      (method === "self-draw" || discarderId !== null) &&
+      !(isAutomatic && calc.belowMin));
 
   const edit: RoundEdit = isDraw
     ? { isDraw: true }
-    : { isDraw: false, winnerId: winnerId!, method: method!, discarderId: discarderId ?? undefined, faan };
+    : {
+        isDraw: false,
+        winnerId: winnerId!,
+        method: method!,
+        discarderId: discarderId ?? undefined,
+        faan: isAutomatic ? calc.total : faan,
+        faanCalc: isAutomatic ? selection : undefined,
+      };
 
   const standingsBefore = computeStandings(game);
   const previewRounds = isValid ? withEditedRound(game, round.id, edit) : null;
@@ -47,6 +84,7 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
   function chooseMethod(m: WinMethod) {
     setMethod(m);
     if (m === "self-draw") setDiscarderId(null);
+    setSelection((prev) => applyWinMethod(patternsFor(game.ruleSet), prev, m));
   }
 
   if (confirmingDelete) {
@@ -184,7 +222,12 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
 
           <section className="flex flex-col items-center gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">How many faan?</h2>
-            <FaanStepper value={faan} min={game.ruleSet.minFaan} max={game.ruleSet.maxFaan} onChange={setFaan} />
+            <FaanModeToggle mode={faanMode} onChange={changeFaanMode} />
+            {isAutomatic ? (
+              <FaanCalculatorTable ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />
+            ) : (
+              <FaanStepper value={faan} min={minFaan} max={maxFaan} onChange={setFaan} />
+            )}
           </section>
         </>
       )}
@@ -230,20 +273,23 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
         Delete Round
       </button>
 
-      <FixedBottomBar className="flex gap-3">
-        <button
-          onClick={onCancel}
-          className="flex-1 rounded-xl border border-slate-600 p-4 text-lg font-semibold text-slate-300 active:bg-slate-800"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => onSave(edit)}
-          disabled={!isValid}
-          className="flex-1 rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400 disabled:opacity-40"
-        >
-          Save Changes
-        </button>
+      <FixedBottomBar className="flex flex-col gap-3">
+        {!isDraw && isAutomatic && <FaanTotalFooter ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />}
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-xl border border-slate-600 p-4 text-lg font-semibold text-slate-300 active:bg-slate-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(edit)}
+            disabled={!isValid}
+            className="flex-1 rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400 disabled:opacity-40"
+          >
+            Save Changes
+          </button>
+        </div>
       </FixedBottomBar>
     </div>
   );

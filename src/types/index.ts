@@ -22,6 +22,39 @@ export interface RuleSet {
   dealInMultiplier: number;
   /** Whether the dealer keeps their seat (and the repeat count goes up) when a hand is drawn. */
   dealerStaysOnDraw: boolean;
+  /** Patterns offered by the faan calculator. Missing on rule sets saved before the calculator existed. */
+  handPatterns?: HandPattern[];
+}
+
+export type HandPatternSection = "everyday" | "bigger" | "limit";
+
+export interface HandPattern {
+  id: string;
+  name: string;
+  chineseName: string;
+  /** Faan awarded (per count, for "count" patterns). Ignored for limit hands, which score the rule set's max faan. */
+  faan: number;
+  description: string;
+  section: HandPatternSection;
+  /** "check" is a yes/no pattern; "count" can be scored up to maxCount times (e.g. seat flowers). */
+  kind: "check" | "count";
+  maxCount?: number;
+  /** Set automatically from the win method rather than by hand. */
+  auto?: "self-draw";
+  /** Pattern ids this one already counts; they can't also be scored ("Included in ..."). */
+  includes?: string[];
+  /** Pattern ids that can't be scored alongside this one. Either side listing the other is enough. */
+  excludes?: string[];
+  /** False hides the pattern from the calculator for this rule set. */
+  enabled: boolean;
+}
+
+/** The calculator inputs behind a round's faan, saved so the round can be reopened in the calculator. */
+export interface FaanSelection {
+  /** Pattern id -> count (1 for a ticked checkbox). */
+  counts: Record<string, number>;
+  /** Manual +/- faan for house rules not on the list. */
+  adjustment: number;
 }
 
 export type WinMethod = "self-draw" | "discard";
@@ -61,6 +94,8 @@ export interface Round {
   windBefore: WindState;
   /** Resulting wind/dealer state after this round (or the manually-set state, for an adjustment). */
   windAfter: WindState;
+  /** Present when the faan was worked out with the calculator; absent for manually entered faan. */
+  faanCalc?: FaanSelection;
   /** True once this round's outcome has been changed via the Round History editor. */
   edited?: boolean;
 }

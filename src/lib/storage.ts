@@ -1,8 +1,10 @@
 import type { GameState, RuleSet } from "../types";
+import type { FaanInputMode } from "./faanCalculator";
 
 const KEYS = {
   game: "mahjong.currentGame",
   ruleSets: "mahjong.ruleSets",
+  faanInputMode: "mahjong.faanInputMode",
 } as const;
 
 function read<T>(key: string): T | null {
@@ -40,4 +42,12 @@ export function loadRuleSets(): RuleSet[] {
 
 export function saveRuleSets(ruleSets: RuleSet[]): void {
   write(KEYS.ruleSets, ruleSets);
+}
+
+export function loadFaanInputMode(): FaanInputMode {
+  return read<FaanInputMode>(KEYS.faanInputMode) === "automatic" ? "automatic" : "manual";
+}
+
+export function saveFaanInputMode(mode: FaanInputMode): void {
+  write(KEYS.faanInputMode, mode);
 }

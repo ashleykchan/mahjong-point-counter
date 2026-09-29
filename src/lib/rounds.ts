@@ -1,4 +1,4 @@
-import type { GameState, PlayerId, Round, WinMethod } from "../types";
+import type { FaanSelection, GameState, PlayerId, Round, WinMethod } from "../types";
 import { computePayouts } from "./scoring";
 import { replayWindForward } from "./wind";
 
@@ -8,6 +8,8 @@ export interface RoundEdit {
   method?: WinMethod;
   discarderId?: PlayerId;
   faan?: number;
+  /** Calculator inputs behind `faan`; omitted when faan was entered manually. */
+  faanCalc?: FaanSelection;
 }
 
 /** Pure: returns the game's rounds with one round's outcome replaced and wind replayed forward from it. */
@@ -27,6 +29,7 @@ export function withEditedRound(game: GameState, roundId: string, edit: RoundEdi
     method: edit.isDraw ? undefined : edit.method,
     discarderId: edit.isDraw ? undefined : edit.discarderId,
     faan: edit.isDraw ? undefined : edit.faan,
+    faanCalc: edit.isDraw ? undefined : edit.faanCalc,
     payouts,
     edited: true,
   };
@@ -44,4 +47,9 @@ export function withDeletedRound(game: GameState, roundId: string): Round[] {
   const rounds = game.rounds.slice();
   rounds.splice(index, 1);
   return replayWindForward(rounds, index, game.players, game.ruleSet.dealerStaysOnDraw);
+}
+
+/** Pure: returns the game's rounds without the most recent entry. Scores and wind are both derived from the rounds, so they roll back together. */
+export function withUndoneLastRound(game: GameState): Round[] {
+  return game.rounds.slice(0, -1);
 }

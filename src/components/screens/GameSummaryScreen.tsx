@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { GameState } from "../../types";
 import { computeStandings } from "../../lib/scoring";
 import { computeGameStats } from "../../lib/stats";
-import { settleUp } from "../../lib/settleUp";
+import { gameSettlement } from "../../lib/settleUp";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { buildGameSummaryText } from "../../lib/gameSummaryText";
 import { FixedBottomBar } from "../FixedBottomBar";
@@ -30,9 +30,7 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
 
   const ranked = [...game.players].sort((a, b) => (standings[b.id] ?? 0) - (standings[a.id] ?? 0));
 
-  const settlement = hasMoney
-    ? settleUp(game.players.map((p) => ({ id: p.id, amount: pointsToMoney(standings[p.id] ?? 0, game.moneyPerPoint) })))
-    : [];
+  const settlement = gameSettlement(game);
 
   const summaryText = buildGameSummaryText(game);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
