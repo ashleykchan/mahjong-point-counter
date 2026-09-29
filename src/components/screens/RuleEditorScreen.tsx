@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { FaanTable, RuleSet } from "../../types";
 import { extendTable } from "../../lib/rangeExtend";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface RuleEditorScreenProps {
   initial: RuleSet;
@@ -99,7 +100,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
   const hasNonIncreasingRow = rows.some((f, i) => i > 0 && (table[f] ?? 0) < (table[rows[i - 1]] ?? 0));
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-center gap-3 pt-2">
         <button onClick={onCancel} className="text-2xl leading-none text-slate-400" aria-label="Back">
           &larr;
@@ -206,7 +207,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
         </button>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md flex-col gap-2 border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar className="flex flex-col gap-2">
         {onSaveAsNew && (
           <button
             onClick={() => onSaveAsNew(buildRuleSet())}
@@ -221,7 +222,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
         >
           Save
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { GameState, Player, Round } from "../../types";
 import { formatCompactMagnitude, pointsToMoney, signOf } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface RoundHistoryScreenProps {
   game: GameState;
@@ -87,7 +88,7 @@ export function RoundHistoryScreen({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-center justify-between gap-3 pt-2">
         <div className="flex items-center gap-3">
           <button
@@ -297,7 +298,7 @@ export function RoundHistoryScreen({
       </ul>
 
       {game.rounds.length > 0 && !editingMode && (
-        <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900 p-4">
+        <FixedBottomBar>
           {confirmingUndo ? (
             <div className="flex flex-col gap-2 rounded-xl border border-rose-800 bg-rose-950 p-3">
               <p className="text-sm text-rose-200">Undo the most recent entry (hand, draw, or adjustment)?</p>
@@ -327,7 +328,7 @@ export function RoundHistoryScreen({
               Undo Last Entry
             </button>
           )}
-        </div>
+        </FixedBottomBar>
       )}
     </div>
   );

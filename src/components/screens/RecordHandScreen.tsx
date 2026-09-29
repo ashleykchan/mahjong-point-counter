@@ -3,6 +3,7 @@ import type { GameState, PlayerId, WinMethod } from "../../types";
 import { computePayouts, pointsForFaan } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { FaanStepper } from "../FaanStepper";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface RecordHandScreenProps {
   game: GameState;
@@ -50,7 +51,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
     winnerId && method ? computePayouts(game.ruleSet, game.players, winnerId, method, faan, discarderId ?? undefined) : [];
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-center gap-3 pt-2">
         <button onClick={back} className="text-2xl leading-none text-slate-400" aria-label="Back">
           &larr;
@@ -155,7 +156,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
             </ul>
           </div>
 
-          <div className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md gap-3 border-t border-slate-800 bg-slate-900 p-4">
+          <FixedBottomBar className="flex gap-3">
             <button
               onClick={onCancel}
               className="flex-1 rounded-xl border border-slate-600 p-4 text-lg font-semibold text-slate-300 active:bg-slate-800"
@@ -168,7 +169,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
             >
               Confirm
             </button>
-          </div>
+          </FixedBottomBar>
         </section>
       )}
     </div>

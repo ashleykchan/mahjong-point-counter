@@ -5,6 +5,7 @@ import { getCurrentWind, seatWindLabel, WIND_LABELS } from "../../lib/wind";
 import { pointsToMoney } from "../../lib/money";
 import { PlayerCard } from "../PlayerCard";
 import { WindBanner } from "../WindBanner";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface ScoreboardScreenProps {
   game: GameState;
@@ -38,7 +39,7 @@ export function ScoreboardScreen({
   const hasMoney = game.moneyPerPoint > 0;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-slate-900 p-4 pb-32 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-center justify-between pt-4">
         <h1 className="text-2xl font-bold">Scoreboard</h1>
         <button onClick={onOpenMoney} className="text-sm font-semibold text-slate-400 underline underline-offset-2">
@@ -133,7 +134,7 @@ export function ScoreboardScreen({
         </div>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md flex-col gap-2 border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar className="flex flex-col gap-2">
         <button
           onClick={onRecordHand}
           className="w-full rounded-xl bg-emerald-500 p-5 text-xl font-bold text-emerald-950 active:bg-emerald-400"
@@ -146,7 +147,7 @@ export function ScoreboardScreen({
         >
           Draw / No Winner
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }

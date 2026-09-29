@@ -6,6 +6,7 @@ import { computeStandings } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
 import { FaanStepper } from "../FaanStepper";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface EditRoundScreenProps {
   game: GameState;
@@ -80,7 +81,7 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-40 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
       <header className="pt-2">
         <div className="flex items-center gap-3">
           <button onClick={onCancel} className="text-2xl leading-none text-slate-400" aria-label="Back">
@@ -229,7 +230,7 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
         Delete Round
       </button>
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md gap-3 border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar className="flex gap-3">
         <button
           onClick={onCancel}
           className="flex-1 rounded-xl border border-slate-600 p-4 text-lg font-semibold text-slate-300 active:bg-slate-800"
@@ -243,7 +244,7 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
         >
           Save Changes
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }

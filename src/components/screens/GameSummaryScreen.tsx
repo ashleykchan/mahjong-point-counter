@@ -5,6 +5,7 @@ import { computeGameStats } from "../../lib/stats";
 import { settleUp } from "../../lib/settleUp";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { buildGameSummaryText } from "../../lib/gameSummaryText";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface GameSummaryScreenProps {
   game: GameState;
@@ -66,7 +67,7 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-start justify-between pt-4">
         <div>
           <h1 className="text-2xl font-bold">Game Summary</h1>
@@ -203,7 +204,7 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
         </section>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto flex max-w-md flex-col gap-2 border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar className="flex flex-col gap-2">
         <button
           onClick={onStartNewGameSamePlayers}
           className="w-full rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400"
@@ -216,7 +217,7 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
         >
           New Game from Scratch
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }

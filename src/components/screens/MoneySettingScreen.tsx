@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 interface MoneySettingScreenProps {
   current: number;
@@ -12,7 +13,7 @@ export function MoneySettingScreen({ current, onSave, onCancel }: MoneySettingSc
   const changed = parsed !== current;
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
       <header className="flex items-center gap-3 pt-2">
         <button onClick={onCancel} className="text-2xl leading-none text-slate-400" aria-label="Back">
           &larr;
@@ -47,14 +48,14 @@ export function MoneySettingScreen({ current, onSave, onCancel }: MoneySettingSc
         </p>
       )}
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar>
         <button
           onClick={() => onSave(parsed)}
           className="w-full rounded-xl bg-emerald-500 p-4 text-lg font-bold text-emerald-950 active:bg-emerald-400"
         >
           Save
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }

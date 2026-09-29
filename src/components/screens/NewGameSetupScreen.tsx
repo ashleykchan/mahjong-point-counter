@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Player, RuleSet } from "../../types";
+import { FixedBottomBar } from "../FixedBottomBar";
 
 const DEFAULT_NAMES = ["East", "South", "West", "North"];
 
@@ -47,7 +48,7 @@ export function NewGameSetupScreen({
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 text-slate-100">
       <header className="pt-4">
         <h1 className="text-2xl font-bold">New Game</h1>
         <p className="text-sm text-slate-400">Set up players and rules before dealing.</p>
@@ -113,7 +114,7 @@ export function NewGameSetupScreen({
         <p className="text-xs text-slate-500">$0.00 means points only &ndash; no money is shown.</p>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-slate-800 bg-slate-900 p-4">
+      <FixedBottomBar>
         <button
           onClick={handleStart}
           disabled={!selectedRuleSet}
@@ -121,7 +122,7 @@ export function NewGameSetupScreen({
         >
           Start Game
         </button>
-      </div>
+      </FixedBottomBar>
     </div>
   );
 }
