@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { RuleSet } from "../../types";
 import { RuleEditorScreen } from "./RuleEditorScreen";
-import { defaultRuleSet } from "../../lib/defaultRules";
+import { defaultRuleSet, doublingRuleSet } from "../../lib/defaultRules";
 
 interface RuleLibraryScreenProps {
   ruleSets: RuleSet[];
@@ -69,12 +69,20 @@ export function RuleLibraryScreen({ ruleSets, onUpsert, onDelete, onClose }: Rul
         ))}
       </div>
 
-      <button
-        onClick={() => setEditing({ ...defaultRuleSet(), id: uid(), name: "New rule set" })}
-        className="rounded-xl border border-dashed border-slate-600 p-4 text-base font-semibold text-slate-300 active:bg-slate-800"
-      >
-        + New rule set
-      </button>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setEditing({ ...defaultRuleSet(), id: uid(), name: "New rule set" })}
+          className="rounded-xl border border-dashed border-slate-600 p-4 text-sm font-semibold text-slate-300 active:bg-slate-800"
+        >
+          + New rule set
+        </button>
+        <button
+          onClick={() => setEditing({ ...doublingRuleSet(), id: uid(), name: "New rule set (doubling)" })}
+          className="rounded-xl border border-dashed border-slate-600 p-4 text-sm font-semibold text-slate-300 active:bg-slate-800"
+        >
+          + From doubling preset
+        </button>
+      </div>
     </div>
   );
 }

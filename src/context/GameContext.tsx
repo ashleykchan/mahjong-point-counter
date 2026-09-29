@@ -45,7 +45,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [game, setGame] = useState<GameState | null>(() => loadGame());
   const [ruleSets, setRuleSets] = useState<RuleSet[]>(() => {
     const stored = loadRuleSets();
-    return stored.length > 0 ? stored : [defaultRuleSet()];
+    if (stored.length === 0) return [defaultRuleSet()];
+    // Keep the built-in "default" rule set in sync with the current app definition;
+    // any rule set the user created themselves (a different id) is left untouched.
+    return stored.map((r) => (r.id === "default" ? defaultRuleSet() : r));
   });
 
   useEffect(() => saveGame(game), [game]);
