@@ -27,7 +27,7 @@ const LDM_FAAN_TABLE: FaanTable = {
 export function defaultRuleSet(): RuleSet {
   return {
     id: "default",
-    name: "Standard (LDM)",
+    name: "Standard",
     minFaan: 3,
     maxFaan: 13,
     faanTable: { ...LDM_FAAN_TABLE },
