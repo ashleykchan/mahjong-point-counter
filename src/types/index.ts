@@ -22,9 +22,18 @@ export interface RuleSet {
   dealInMultiplier: number;
   /** Whether the dealer keeps their seat (and the repeat count goes up) when a hand is drawn. */
   dealerStaysOnDraw: boolean;
+  /** What a false winner (詐糊) pays each other player. Missing on older rule sets: min-faan self-draw. */
+  falseWinPenalty?: FalseWinPenalty;
+  /** Points each other player gets when falseWinPenalty is "flat". */
+  falseWinFlatPoints?: number;
+  /** Whether the dealer keeps their seat after a false win. Missing on older rule sets: stays. */
+  dealerStaysOnFalseWin?: boolean;
   /** Patterns offered by the faan calculator. Missing on rule sets saved before the calculator existed. */
   handPatterns?: HandPattern[];
 }
+
+/** "min-self-draw" / "max-self-draw": each other player gets the self-draw amount at the min / max faan. */
+export type FalseWinPenalty = "min-self-draw" | "max-self-draw" | "flat";
 
 export type HandPatternSection = "everyday" | "bigger" | "limit";
 
@@ -88,6 +97,8 @@ export interface Round {
   winnerId?: PlayerId;
   method?: WinMethod;
   discarderId?: PlayerId;
+  /** Set for a false win (詐糊): this player declared a win they didn't have and pays every other player. */
+  falseWinnerId?: PlayerId;
   faan?: number;
   payouts: Payout[];
   /** Wind/dealer state in effect while this hand was played (or, for an adjustment, before the change). */

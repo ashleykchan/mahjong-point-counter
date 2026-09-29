@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FaanSelection, GameState, PlayerId, Round, WinMethod } from "../../types";
 import type { RoundEdit } from "../../lib/rounds";
 import { withEditedRound } from "../../lib/rounds";
-import { computeStandings } from "../../lib/scoring";
+import { computeStandings, falseWinPenaltyEach } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
 import { FaanStepper } from "../FaanStepper";
@@ -17,6 +17,14 @@ import {
 } from "../../lib/faanCalculator";
 import { loadFaanInputMode, saveFaanInputMode } from "../../lib/storage";
 
+type RoundResult = "win" | "falseWin" | "draw";
+
+const RESULT_OPTIONS: { value: RoundResult; label: string }[] = [
+  { value: "win", label: "Hand Played" },
+  { value: "falseWin", label: "False Win 詐糊" },
+  { value: "draw", label: "Draw / No Winner" },
+];
+
 interface EditRoundScreenProps {
   game: GameState;
   round: Round;
@@ -27,7 +35,8 @@ interface EditRoundScreenProps {
 }
 
 export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, onDelete }: EditRoundScreenProps) {
-  const [isDraw, setIsDraw] = useState(round.isDraw);
+  const [result, setResult] = useState<RoundResult>(round.isDraw ? "draw" : round.falseWinnerId ? "falseWin" : "win");
+  const [falseWinnerId, setFalseWinnerId] = useState<PlayerId | null>(round.falseWinnerId ?? null);
   const [winnerId, setWinnerId] = useState<PlayerId | null>(round.winnerId ?? null);
   const [method, setMethod] = useState<WinMethod | null>(round.method ?? null);
   const [discarderId, setDiscarderId] = useState<PlayerId | null>(round.discarderId ?? null);
@@ -55,22 +64,27 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
   const others = game.players.filter((p) => p.id !== winnerId);
 
   const isValid =
-    isDraw ||
-    (winnerId !== null &&
+    result === "draw" ||
+    (result === "falseWin" && falseWinnerId !== null) ||
+    (result === "win" &&
+      winnerId !== null &&
       method !== null &&
       (method === "self-draw" || discarderId !== null) &&
       !(isAutomatic && calc.belowMin));
 
-  const edit: RoundEdit = isDraw
-    ? { isDraw: true }
-    : {
-        isDraw: false,
-        winnerId: winnerId!,
-        method: method!,
-        discarderId: discarderId ?? undefined,
-        faan: isAutomatic ? calc.total : faan,
-        faanCalc: isAutomatic ? selection : undefined,
-      };
+  const edit: RoundEdit =
+    result === "draw"
+      ? { isDraw: true }
+      : result === "falseWin"
+        ? { isDraw: false, falseWinnerId: falseWinnerId ?? undefined }
+        : {
+            isDraw: false,
+            winnerId: winnerId!,
+            method: method!,
+            discarderId: discarderId ?? undefined,
+            faan: isAutomatic ? calc.total : faan,
+            faanCalc: isAutomatic ? selection : undefined,
+          };
 
   const standingsBefore = computeStandings(game);
   const previewRounds = isValid ? withEditedRound(game, round.id, edit) : null;
@@ -133,26 +147,52 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-2">
-        <button
-          onClick={() => setIsDraw(false)}
-          className={`rounded-xl border p-3 text-sm font-semibold ${
-            !isDraw ? "border-emerald-400 bg-emerald-400/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-300"
-          }`}
-        >
-          Hand Played
-        </button>
-        <button
-          onClick={() => setIsDraw(true)}
-          className={`rounded-xl border p-3 text-sm font-semibold ${
-            isDraw ? "border-emerald-400 bg-emerald-400/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-300"
-          }`}
-        >
-          Draw / No Winner
-        </button>
+      <section className="grid grid-cols-3 gap-2">
+        {RESULT_OPTIONS.map((o) => {
+          const selected = result === o.value;
+          const selectedClass =
+            o.value === "falseWin"
+              ? "border-rose-400 bg-rose-400/10 text-rose-300"
+              : "border-emerald-400 bg-emerald-400/10 text-emerald-300";
+          return (
+            <button
+              key={o.value}
+              onClick={() => setResult(o.value)}
+              className={`min-h-12 rounded-xl border p-2 text-sm font-semibold leading-tight ${
+                selected ? selectedClass : "border-slate-700 bg-slate-800 text-slate-300"
+              }`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
       </section>
 
-      {!isDraw && (
+      {result === "falseWin" && (
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who declared the false win?</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {game.players.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setFalseWinnerId(p.id)}
+                className={`rounded-2xl border p-4 text-base font-semibold ${
+                  falseWinnerId === p.id
+                    ? "border-rose-400 bg-rose-400/10 text-rose-300"
+                    : "border-slate-700 bg-slate-800 active:bg-slate-700"
+                }`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-slate-400">
+            Pays {falseWinPenaltyEach(game.ruleSet)} pts to each other player.
+          </p>
+        </section>
+      )}
+
+      {result === "win" && (
         <>
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who won?</h2>
@@ -274,7 +314,7 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
       </button>
 
       <FixedBottomBar className="flex flex-col gap-3">
-        {!isDraw && isAutomatic && <FaanTotalFooter ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />}
+        {result === "win" && isAutomatic && <FaanTotalFooter ruleSet={game.ruleSet} selection={selection} onChange={setSelection} />}
         <div className="flex gap-3">
           <button
             onClick={onCancel}

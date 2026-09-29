@@ -30,6 +30,9 @@ function subtitleFor(round: Round, players: Player[], roundNumber: number | null
 function mainLineFor(round: Round, nameOf: (id?: string) => string): string {
   if (round.isAdjustment) return "Wind/dealer adjusted";
   if (round.isDraw) return "Draw";
+  if (round.falseWinnerId) {
+    return `${nameOf(round.falseWinnerId)} false win (詐糊) · paid ${formatCompactMagnitude(round.payouts[0]?.amount ?? 0)} to each player`;
+  }
   const winner = nameOf(round.winnerId);
   if (round.method === "self-draw") return `${winner} self-drew · ${round.faan} faan`;
   return `${winner} won off ${nameOf(round.discarderId)}'s discard · ${round.faan} faan`;
@@ -144,14 +147,16 @@ export function RoundHistoryScreen({
           const isExpanded = !editingMode && expandedIds.has(round.id);
           const canEditThisRound = !round.isAdjustment;
 
-          const gain = round.isDraw || round.isAdjustment ? 0 : round.payouts.reduce((sum, p) => sum + p.amount, 0);
+          const isFalseWin = Boolean(round.falseWinnerId);
+          const gain = round.isDraw || round.isAdjustment || isFalseWin ? 0 : round.payouts.reduce((sum, p) => sum + p.amount, 0);
+          const penalty = isFalseWin ? round.payouts.reduce((sum, p) => sum + p.amount, 0) : 0;
 
           return (
             <li
               key={round.id}
               className={`overflow-hidden rounded-2xl border bg-slate-800 ${
-                editingMode ? "border-sky-500" : "border-slate-700"
-              }`}
+                editingMode ? "border-sky-500" : isFalseWin ? "border-rose-700" : "border-slate-700"
+              } ${isFalseWin ? "border-l-4" : ""}`}
             >
               <div className="flex items-stretch">
                 {editingMode && (
@@ -177,7 +182,7 @@ export function RoundHistoryScreen({
                     <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">
                       {subtitleFor(round, game.players, roundNumber)}
                     </p>
-                    <p className="text-lg font-semibold leading-snug">
+                    <p className={`text-lg font-semibold leading-snug ${isFalseWin ? "text-rose-300" : ""}`}>
                       {mainLineFor(round, nameOf)}
                       {round.edited && (
                         <span className="ml-2 rounded-full bg-sky-500/20 px-2 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-sky-300">
@@ -188,6 +193,18 @@ export function RoundHistoryScreen({
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1">
+                    {penalty > 0 && (
+                      <>
+                        <span className="font-bold tabular-nums text-rose-400">
+                          &minus;{formatCompactMagnitude(penalty)} pts
+                        </span>
+                        {hasMoney && (
+                          <span className="text-xs tabular-nums text-rose-400/80">
+                            &minus;${formatCompactMagnitude(pointsToMoney(penalty, game.moneyPerPoint))}
+                          </span>
+                        )}
+                      </>
+                    )}
                     {gain > 0 && (
                       <>
                         <span className="font-bold tabular-nums text-emerald-400">

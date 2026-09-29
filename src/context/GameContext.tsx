@@ -4,6 +4,7 @@ import { loadGame, loadRuleSets, saveGame, saveRuleSets } from "../lib/storage";
 import { defaultRuleSet } from "../lib/defaultRules";
 import { withHandPatterns } from "../lib/faanCalculator";
 import { getCurrentWind, nextWindState } from "../lib/wind";
+import { computeFalseWinPayouts } from "../lib/scoring";
 import { withDeletedRound, withEditedRound, withUndoneLastRound, type RoundEdit } from "../lib/rounds";
 
 interface GameContextValue {
@@ -28,6 +29,8 @@ interface GameContextValue {
     faanCalc?: FaanSelection,
   ) => void;
   recordDraw: () => void;
+  /** A player declared a win they didn't have (詐糊) and pays every other player the rule set's penalty. */
+  recordFalseWin: (falseWinnerId: PlayerId) => void;
   undoLastRound: () => void;
   editRound: (roundId: string, edit: RoundEdit) => void;
   deleteRound: (roundId: string) => void;
@@ -89,7 +92,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             windBefore,
             prev.players,
             { isDraw: false, winnerId },
-            prev.ruleSet.dealerStaysOnDraw,
+            prev.ruleSet,
           );
           const round: Round = {
             id: uid(),
@@ -111,12 +114,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setGame((prev) => {
           if (!prev) return prev;
           const windBefore = getCurrentWind(prev);
-          const windAfter = nextWindState(windBefore, prev.players, { isDraw: true }, prev.ruleSet.dealerStaysOnDraw);
+          const windAfter = nextWindState(windBefore, prev.players, { isDraw: true }, prev.ruleSet);
           const round: Round = {
             id: uid(),
             timestamp: Date.now(),
             isDraw: true,
             payouts: [],
+            windBefore,
+            windAfter,
+          };
+          return { ...prev, rounds: [...prev.rounds, round] };
+        });
+      },
+      recordFalseWin: (falseWinnerId) => {
+        setGame((prev) => {
+          if (!prev) return prev;
+          const windBefore = getCurrentWind(prev);
+          const windAfter = nextWindState(windBefore, prev.players, { isDraw: false, falseWinnerId }, prev.ruleSet);
+          const round: Round = {
+            id: uid(),
+            timestamp: Date.now(),
+            isDraw: false,
+            falseWinnerId,
+            payouts: computeFalseWinPayouts(prev.ruleSet, prev.players, falseWinnerId),
             windBefore,
             windAfter,
           };

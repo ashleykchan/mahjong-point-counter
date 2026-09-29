@@ -1,8 +1,8 @@
 // Test helpers: builds games the same way GameContext records rounds, without React.
 import type { GameState, Player, PlayerId, Round, WindState, WinMethod } from "../types";
 import { defaultRuleSet } from "./defaultRules";
-import { computePayouts } from "./scoring";
-import { getCurrentWind, nextWindState } from "./wind";
+import { computeFalseWinPayouts, computePayouts } from "./scoring";
+import { getCurrentWind, nextWindState, outcomeOf } from "./wind";
 
 export const PLAYERS: Player[] = ["a", "b", "c", "d"].map((id) => ({ id, name: id.toUpperCase() }));
 
@@ -24,7 +24,7 @@ function append(game: GameState, round: Omit<Round, "id" | "timestamp" | "windBe
   const windBefore = getCurrentWind(game);
   const after =
     windAfter ??
-    nextWindState(windBefore, game.players, { isDraw: round.isDraw, winnerId: round.winnerId }, game.ruleSet.dealerStaysOnDraw);
+    nextWindState(windBefore, game.players, outcomeOf(round), game.ruleSet);
   return {
     ...game,
     rounds: [...game.rounds, { ...round, id: `r${nextId++}`, timestamp: 0, windBefore, windAfter: after }],
@@ -40,6 +40,14 @@ export function win(
 ): GameState {
   const payouts = computePayouts(game.ruleSet, game.players, winnerId, method, faan, discarderId);
   return append(game, { isDraw: false, winnerId, method, faan, discarderId, payouts });
+}
+
+export function falseWin(game: GameState, falseWinnerId: PlayerId): GameState {
+  return append(game, {
+    isDraw: false,
+    falseWinnerId,
+    payouts: computeFalseWinPayouts(game.ruleSet, game.players, falseWinnerId),
+  });
 }
 
 export function draw(game: GameState): GameState {
