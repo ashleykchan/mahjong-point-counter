@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FaanTable, RuleSet } from "../../types";
+import { extendTable } from "../../lib/rangeExtend";
 
 interface RuleEditorScreenProps {
   initial: RuleSet;
@@ -10,39 +11,78 @@ interface RuleEditorScreenProps {
   onDelete?: () => void;
 }
 
-function resizeTable(table: FaanTable, oldMin: number, min: number, max: number): FaanTable {
-  const next: FaanTable = {};
-  let last = table[oldMin] ?? 8;
-  for (let f = min; f <= max; f++) {
-    if (table[f] !== undefined) {
-      next[f] = table[f];
-      last = table[f];
-    } else {
-      last = last * 2;
-      next[f] = last;
-    }
-  }
-  return next;
+const FAAN_FLOOR = 1;
+const FAAN_CEILING = 13;
+
+function RangeStepper({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex flex-1 flex-col gap-2">
+      <label className="text-sm text-slate-400">{label}</label>
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-700 bg-slate-800 p-2">
+        <button
+          type="button"
+          disabled={value <= min}
+          onClick={() => onChange(value - 1)}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-xl font-bold text-slate-100 active:bg-slate-600 disabled:opacity-30"
+          aria-label={`Decrease ${label}`}
+        >
+          &minus;
+        </button>
+        <span className="text-2xl font-bold tabular-nums text-slate-50">{value}</span>
+        <button
+          type="button"
+          disabled={value >= max}
+          onClick={() => onChange(value + 1)}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-xl font-bold text-slate-100 active:bg-slate-600 disabled:opacity-30"
+          aria-label={`Increase ${label}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel, onDelete }: RuleEditorScreenProps) {
   const [name, setName] = useState(initial.name);
   const [minFaan, setMinFaan] = useState(initial.minFaan);
   const [maxFaan, setMaxFaan] = useState(initial.maxFaan);
-  const [faanTable, setFaanTable] = useState<FaanTable>(initial.faanTable);
+  // Holds every faan value the user has ever seen, even ones currently outside [minFaan, maxFaan],
+  // so narrowing then widening the range restores exactly what was there before.
+  const [table, setTable] = useState<FaanTable>(initial.faanTable);
   const [selfDrawMultiplier, setSelfDrawMultiplier] = useState(initial.selfDrawMultiplier);
   const [dealInMultiplier, setDealInMultiplier] = useState(initial.dealInMultiplier);
   const [dealerStaysOnDraw, setDealerStaysOnDraw] = useState(initial.dealerStaysOnDraw);
 
-  function updateRange(newMin: number, newMax: number) {
-    const min = Math.min(Math.max(newMin, 1), 13);
-    const max = Math.min(Math.max(newMax, min), 13);
-    setFaanTable((prev) => resizeTable(prev, minFaan, min, max));
+  function updateMin(newMin: number) {
+    const min = Math.min(Math.max(newMin, FAAN_FLOOR), maxFaan);
+    setTable((prev) => extendTable(prev, min, maxFaan));
     setMinFaan(min);
+  }
+
+  function updateMax(newMax: number) {
+    const max = Math.max(Math.min(newMax, FAAN_CEILING), minFaan);
+    setTable((prev) => extendTable(prev, minFaan, max));
     setMaxFaan(max);
   }
 
   function buildRuleSet(): RuleSet {
+    const faanTable: FaanTable = {};
+    for (let f = minFaan; f <= maxFaan; f++) {
+      faanTable[f] = table[f] ?? 0;
+    }
     return {
       id: initial.id,
       name: name.trim() || "Untitled rule set",
@@ -56,6 +96,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
   }
 
   const rows = Array.from({ length: maxFaan - minFaan + 1 }, (_, i) => minFaan + i);
+  const hasNonIncreasingRow = rows.some((f, i) => i > 0 && (table[f] ?? 0) < (table[rows[i - 1]] ?? 0));
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 bg-slate-900 p-4 pb-28 text-slate-100">
@@ -79,24 +120,8 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
       </section>
 
       <section className="flex gap-4">
-        <div className="flex flex-1 flex-col gap-2">
-          <label className="text-sm text-slate-400">Min faan to win</label>
-          <input
-            type="number"
-            value={minFaan}
-            onChange={(e) => updateRange(Number(e.target.value), maxFaan)}
-            className="rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
-          />
-        </div>
-        <div className="flex flex-1 flex-col gap-2">
-          <label className="text-sm text-slate-400">Max faan (limit)</label>
-          <input
-            type="number"
-            value={maxFaan}
-            onChange={(e) => updateRange(minFaan, Number(e.target.value))}
-            className="rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
-          />
-        </div>
+        <RangeStepper label="Min faan to win" value={minFaan} min={FAAN_FLOOR} max={maxFaan} onChange={updateMin} />
+        <RangeStepper label="Max faan (limit)" value={maxFaan} min={minFaan} max={FAAN_CEILING} onChange={updateMax} />
       </section>
 
       <section className="flex flex-col gap-2">
@@ -108,16 +133,19 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
               <input
                 type="number"
                 min={0}
-                value={faanTable[faan] ?? 0}
-                onChange={(e) =>
-                  setFaanTable((prev) => ({ ...prev, [faan]: Math.max(0, Number(e.target.value)) }))
-                }
+                value={table[faan] ?? 0}
+                onChange={(e) => setTable((prev) => ({ ...prev, [faan]: Math.max(0, Number(e.target.value)) }))}
                 className="w-full rounded-lg border border-slate-600 bg-slate-900 p-2 text-right text-lg tabular-nums"
               />
               <span className="w-6 shrink-0 text-slate-500">pts</span>
             </div>
           ))}
         </div>
+        {hasNonIncreasingRow && (
+          <p className="rounded-lg border border-amber-800 bg-amber-950 p-2 text-xs text-amber-300">
+            Heads up: a higher faan is worth fewer points than a lower one somewhere in this table.
+          </p>
+        )}
       </section>
 
       <section className="flex gap-4">

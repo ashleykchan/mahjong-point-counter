@@ -4,15 +4,17 @@ import { NewGameSetupScreen } from "./components/screens/NewGameSetupScreen";
 import { ScoreboardScreen } from "./components/screens/ScoreboardScreen";
 import { RecordHandScreen } from "./components/screens/RecordHandScreen";
 import { RoundHistoryScreen } from "./components/screens/RoundHistoryScreen";
+import { EditRoundScreen } from "./components/screens/EditRoundScreen";
 import { RuleLibraryScreen } from "./components/screens/RuleLibraryScreen";
 import { AdjustWindScreen } from "./components/screens/AdjustWindScreen";
 import { MoneySettingScreen } from "./components/screens/MoneySettingScreen";
 import { GameSummaryScreen } from "./components/screens/GameSummaryScreen";
 import { computePayouts } from "./lib/scoring";
+import { withDeletedRound, withEditedRound, type RoundEdit } from "./lib/rounds";
 import { completedFullCycle, getCurrentWind, nextWindState } from "./lib/wind";
-import type { PlayerId, WinMethod } from "./types";
+import type { GameState, PlayerId, WinMethod } from "./types";
 
-type View = "setup" | "scoreboard" | "record" | "history" | "rules" | "money" | "adjustWind";
+type View = "setup" | "scoreboard" | "record" | "history" | "editRound" | "rules" | "money" | "adjustWind";
 
 function AppShell() {
   const {
@@ -24,6 +26,8 @@ function AppShell() {
     recordHand,
     recordDraw,
     undoLastRound,
+    editRound,
+    deleteRound,
     adjustWind,
     setMoneyPerPoint,
     upsertRuleSet,
@@ -31,6 +35,8 @@ function AppShell() {
   } = useGame();
   const [view, setView] = useState<View>(game ? "scoreboard" : "setup");
   const [justCompletedCycle, setJustCompletedCycle] = useState(false);
+  const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
+  const [windChangedNotice, setWindChangedNotice] = useState(false);
 
   if (view === "rules") {
     return (
@@ -62,6 +68,62 @@ function AppShell() {
     );
   }
 
+  // History and round editing are reachable whether the game is still live or already ended.
+  if (view === "history") {
+    return (
+      <RoundHistoryScreen
+        game={game}
+        onClose={() => setView("scoreboard")}
+        onUndoLast={undoLastRound}
+        onEditRound={(roundId) => {
+          setEditingRoundId(roundId);
+          setView("editRound");
+        }}
+        onDeleteRound={(roundId) => {
+          const changed = windChangedByDeletingRound(game, roundId);
+          deleteRound(roundId);
+          setWindChangedNotice(changed);
+        }}
+        windChangedNotice={windChangedNotice}
+        onDismissWindChangedNotice={() => setWindChangedNotice(false)}
+      />
+    );
+  }
+
+  if (view === "editRound" && editingRoundId) {
+    const roundIndex = game.rounds.findIndex((r) => r.id === editingRoundId);
+    const round = game.rounds[roundIndex];
+    if (!round) {
+      setView("history");
+      return null;
+    }
+    return (
+      <EditRoundScreen
+        game={game}
+        round={round}
+        roundNumber={roundIndex + 1}
+        onCancel={() => {
+          setEditingRoundId(null);
+          setView("history");
+        }}
+        onSave={(edit) => {
+          const changed = windChangedByEditingRound(game, editingRoundId, edit);
+          editRound(editingRoundId, edit);
+          setWindChangedNotice(changed);
+          setEditingRoundId(null);
+          setView("history");
+        }}
+        onDelete={() => {
+          const changed = windChangedByDeletingRound(game, editingRoundId);
+          deleteRound(editingRoundId);
+          setWindChangedNotice(changed);
+          setEditingRoundId(null);
+          setView("history");
+        }}
+      />
+    );
+  }
+
   if (game.endedAt) {
     return (
       <GameSummaryScreen
@@ -72,6 +134,7 @@ function AppShell() {
           setJustCompletedCycle(false);
           setView("setup");
         }}
+        onOpenHistory={() => setView("history")}
       />
     );
   }
@@ -91,10 +154,6 @@ function AppShell() {
         }}
       />
     );
-  }
-
-  if (view === "history") {
-    return <RoundHistoryScreen game={game} onClose={() => setView("scoreboard")} onUndoLast={undoLastRound} />;
   }
 
   if (view === "money") {
@@ -146,6 +205,18 @@ function AppShell() {
       onDismissCycleNotice={() => setJustCompletedCycle(false)}
     />
   );
+}
+
+function windChangedByEditingRound(game: GameState, roundId: string, edit: RoundEdit): boolean {
+  const before = getCurrentWind(game);
+  const after = getCurrentWind({ ...game, rounds: withEditedRound(game, roundId, edit) });
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+function windChangedByDeletingRound(game: GameState, roundId: string): boolean {
+  const before = getCurrentWind(game);
+  const after = getCurrentWind({ ...game, rounds: withDeletedRound(game, roundId) });
+  return JSON.stringify(before) !== JSON.stringify(after);
 }
 
 export default function App() {

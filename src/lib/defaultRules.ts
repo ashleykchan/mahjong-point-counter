@@ -9,12 +9,42 @@ export function buildDoublingTable(minFaan: number, maxFaan: number, base = 8): 
   return table;
 }
 
+/** The "one player pays" (deal-in) amount per faan on our group's LDM scoring sheet. */
+const LDM_FAAN_TABLE: FaanTable = {
+  3: 8,
+  4: 16,
+  5: 24,
+  6: 32,
+  7: 48,
+  8: 64,
+  9: 96,
+  10: 128,
+  11: 192,
+  12: 256,
+  13: 384,
+};
+
 export function defaultRuleSet(): RuleSet {
+  return {
+    id: "default",
+    name: "Standard",
+    minFaan: 3,
+    maxFaan: 13,
+    faanTable: { ...LDM_FAAN_TABLE },
+    // Deal-in: discarder pays the full table amount. Self-draw: each opponent pays half.
+    selfDrawMultiplier: 0.5,
+    dealInMultiplier: 1,
+    dealerStaysOnDraw: true,
+  };
+}
+
+/** Alternate starting point for a new custom rule set, kept available in the editor. */
+export function doublingRuleSet(): RuleSet {
   const minFaan = 3;
   const maxFaan = 10;
   return {
-    id: "default",
-    name: "Standard (3-10 faan)",
+    id: "doubling",
+    name: "Doubling (3-10 faan)",
     minFaan,
     maxFaan,
     faanTable: buildDoublingTable(minFaan, maxFaan, 8),

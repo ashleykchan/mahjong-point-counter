@@ -3,6 +3,7 @@ import type { GameState, Payout, Player, PlayerId, Round, RuleSet, WindState, Wi
 import { loadGame, loadRuleSets, saveGame, saveRuleSets } from "../lib/storage";
 import { defaultRuleSet } from "../lib/defaultRules";
 import { getCurrentWind, nextWindState } from "../lib/wind";
+import { withDeletedRound, withEditedRound, type RoundEdit } from "../lib/rounds";
 
 interface GameContextValue {
   game: GameState | null;
@@ -26,6 +27,8 @@ interface GameContextValue {
   ) => void;
   recordDraw: () => void;
   undoLastRound: () => void;
+  editRound: (roundId: string, edit: RoundEdit) => void;
+  deleteRound: (roundId: string) => void;
   adjustWind: (next: WindState) => void;
   setMoneyPerPoint: (value: number) => void;
   upsertRuleSet: (ruleSet: RuleSet) => void;
@@ -42,7 +45,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [game, setGame] = useState<GameState | null>(() => loadGame());
   const [ruleSets, setRuleSets] = useState<RuleSet[]>(() => {
     const stored = loadRuleSets();
-    return stored.length > 0 ? stored : [defaultRuleSet()];
+    if (stored.length === 0) return [defaultRuleSet()];
+    // Keep the built-in "default" rule set in sync with the current app definition;
+    // any rule set the user created themselves (a different id) is left untouched.
+    return stored.map((r) => (r.id === "default" ? defaultRuleSet() : r));
   });
 
   useEffect(() => saveGame(game), [game]);
@@ -113,6 +119,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
           if (!prev || prev.rounds.length === 0) return prev;
           return { ...prev, rounds: prev.rounds.slice(0, -1) };
         });
+      },
+      editRound: (roundId, edit) => {
+        setGame((prev) => (prev ? { ...prev, rounds: withEditedRound(prev, roundId, edit) } : prev));
+      },
+      deleteRound: (roundId) => {
+        setGame((prev) => (prev ? { ...prev, rounds: withDeletedRound(prev, roundId) } : prev));
       },
       adjustWind: (next) => {
         setGame((prev) => {

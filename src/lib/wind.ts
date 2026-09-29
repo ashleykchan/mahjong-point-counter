@@ -57,6 +57,36 @@ export function nextWindState(
   };
 }
 
+/**
+ * Recompute windBefore/windAfter for `rounds[fromIndex..]`, given that everything before
+ * `fromIndex` is already correct. Used after editing or deleting a round, since a change to
+ * one round's outcome can shift the dealer/wind for every round that follows it.
+ *
+ * Adjustment rounds are manual overrides: their windBefore is corrected like any other round,
+ * but their windAfter (the operator's chosen state) is left untouched, and replay continues
+ * from that state.
+ */
+export function replayWindForward(
+  rounds: Round[],
+  fromIndex: number,
+  players: Player[],
+  dealerStaysOnDraw: boolean,
+): Round[] {
+  if (fromIndex >= rounds.length) return rounds;
+  const result = rounds.slice();
+  let currentWind = fromIndex === 0 ? initialWindState() : result[fromIndex - 1].windAfter;
+  for (let i = fromIndex; i < result.length; i++) {
+    const round = result[i];
+    const windBefore = currentWind;
+    const windAfter = round.isAdjustment
+      ? round.windAfter
+      : nextWindState(windBefore, players, { isDraw: round.isDraw, winnerId: round.winnerId }, dealerStaysOnDraw);
+    result[i] = { ...round, windBefore, windAfter };
+    currentWind = windAfter;
+  }
+  return result;
+}
+
 /** True if this round's outcome just completed a full East-South-West-North cycle. */
 export function completedFullCycle(round: Pick<Round, "windBefore" | "windAfter">): boolean {
   return round.windBefore.prevailingWind === 3 && round.windAfter.prevailingWind === 0;
