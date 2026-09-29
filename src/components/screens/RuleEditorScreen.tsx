@@ -154,7 +154,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
       </section>
 
       <section className="flex gap-4">
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <label className="text-sm text-slate-400">Self-draw multiplier</label>
           <input
             type="number"
@@ -162,11 +162,11 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
             min={0}
             value={selfDrawMultiplier}
             onChange={(e) => setSelfDrawMultiplier(Math.max(0, Number(e.target.value)))}
-            className="rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
+            className="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
           />
           <p className="text-xs text-slate-500">Each opponent pays base points &times; this value.</p>
         </div>
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
           <label className="text-sm text-slate-400">Deal-in multiplier</label>
           <input
             type="number"
@@ -174,7 +174,7 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
             min={0}
             value={dealInMultiplier}
             onChange={(e) => setDealInMultiplier(Math.max(0, Number(e.target.value)))}
-            className="rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
+            className="w-full min-w-0 rounded-xl border border-slate-700 bg-slate-800 p-3 text-lg tabular-nums"
           />
           <p className="text-xs text-slate-500">Discarder pays base points &times; this value.</p>
         </div>

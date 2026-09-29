@@ -48,3 +48,8 @@ export function withDeletedRound(game: GameState, roundId: string): Round[] {
   rounds.splice(index, 1);
   return replayWindForward(rounds, index, game.players, game.ruleSet.dealerStaysOnDraw);
 }
+
+/** Pure: returns the game's rounds without the most recent entry. Scores and wind are both derived from the rounds, so they roll back together. */
+export function withUndoneLastRound(game: GameState): Round[] {
+  return game.rounds.slice(0, -1);
+}

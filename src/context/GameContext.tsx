@@ -4,7 +4,7 @@ import { loadGame, loadRuleSets, saveGame, saveRuleSets } from "../lib/storage";
 import { defaultRuleSet } from "../lib/defaultRules";
 import { withHandPatterns } from "../lib/faanCalculator";
 import { getCurrentWind, nextWindState } from "../lib/wind";
-import { withDeletedRound, withEditedRound, type RoundEdit } from "../lib/rounds";
+import { withDeletedRound, withEditedRound, withUndoneLastRound, type RoundEdit } from "../lib/rounds";
 
 interface GameContextValue {
   game: GameState | null;
@@ -126,7 +126,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       undoLastRound: () => {
         setGame((prev) => {
           if (!prev || prev.rounds.length === 0) return prev;
-          return { ...prev, rounds: prev.rounds.slice(0, -1) };
+          return { ...prev, rounds: withUndoneLastRound(prev) };
         });
       },
       editRound: (roundId, edit) => {

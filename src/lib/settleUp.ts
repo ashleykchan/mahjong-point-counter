@@ -1,5 +1,6 @@
-import type { Payout, PlayerId } from "../types";
-import { round2 } from "./money";
+import type { GameState, Payout, PlayerId } from "../types";
+import { pointsToMoney, round2 } from "./money";
+import { computeStandings } from "./scoring";
 
 interface Balance {
   id: PlayerId;
@@ -38,4 +39,16 @@ export function settleUp(balances: Balance[]): Payout[] {
     if (creditors[j].amount <= EPSILON) j++;
   }
   return payouts;
+}
+
+/** Who pays whom at the end of a money game: each player's winnings or losses, excluding their starting score. */
+export function gameSettlement(game: GameState): Payout[] {
+  if (game.moneyPerPoint <= 0) return [];
+  const standings = computeStandings(game);
+  return settleUp(
+    game.players.map((p) => ({
+      id: p.id,
+      amount: pointsToMoney((standings[p.id] ?? 0) - (game.startingScores[p.id] ?? 0), game.moneyPerPoint),
+    })),
+  );
 }
