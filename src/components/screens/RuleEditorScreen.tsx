@@ -1,9 +1,10 @@
 import { useState } from "react";
-import type { FaanTable, HandPattern, RuleSet } from "../../types";
+import type { FaanTable, FalseWinPenalty, HandPattern, RuleSet } from "../../types";
 import { extendTable } from "../../lib/rangeExtend";
 import { FixedBottomBar } from "../FixedBottomBar";
 import { HandPatternsEditor } from "../HandPatternsEditor";
 import { defaultHandPatterns } from "../../lib/faanCalculator";
+import { DEFAULT_FALSE_WIN_FLAT_POINTS, falseWinPenaltyEach } from "../../lib/scoring";
 
 interface RuleEditorScreenProps {
   initial: RuleSet;
@@ -68,6 +69,9 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
   const [selfDrawMultiplier, setSelfDrawMultiplier] = useState(initial.selfDrawMultiplier);
   const [dealInMultiplier, setDealInMultiplier] = useState(initial.dealInMultiplier);
   const [dealerStaysOnDraw, setDealerStaysOnDraw] = useState(initial.dealerStaysOnDraw);
+  const [falseWinPenalty, setFalseWinPenalty] = useState<FalseWinPenalty>(initial.falseWinPenalty ?? "min-self-draw");
+  const [falseWinFlatPoints, setFalseWinFlatPoints] = useState(initial.falseWinFlatPoints ?? DEFAULT_FALSE_WIN_FLAT_POINTS);
+  const [dealerStaysOnFalseWin, setDealerStaysOnFalseWin] = useState(initial.dealerStaysOnFalseWin ?? true);
   const [handPatterns, setHandPatterns] = useState<HandPattern[]>(() => initial.handPatterns ?? defaultHandPatterns());
 
   function updateMin(newMin: number) {
@@ -96,9 +100,19 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
       selfDrawMultiplier,
       dealInMultiplier,
       dealerStaysOnDraw,
+      falseWinPenalty,
+      falseWinFlatPoints,
+      dealerStaysOnFalseWin,
       handPatterns,
     };
   }
+
+  const falseWinEach = falseWinPenaltyEach(buildRuleSet());
+  const falseWinOptions: { value: FalseWinPenalty; label: string; detail: string }[] = [
+    { value: "min-self-draw", label: "Minimum faan self-draw", detail: `${minFaan} faan self-draw amount` },
+    { value: "max-self-draw", label: "Maximum faan self-draw", detail: `${maxFaan} faan self-draw amount` },
+    { value: "flat", label: "Flat amount", detail: "A set number of points" },
+  ];
 
   const rows = Array.from({ length: maxFaan - minFaan + 1 }, (_, i) => minFaan + i);
   const hasNonIncreasingRow = rows.some((f, i) => i > 0 && (table[f] ?? 0) < (table[rows[i - 1]] ?? 0));
@@ -195,6 +209,66 @@ export function RuleEditorScreen({ initial, title, onSave, onSaveAsNew, onCancel
             onClick={() => setDealerStaysOnDraw(false)}
             className={`rounded-xl border p-3 text-sm font-semibold ${
               !dealerStaysOnDraw ? "border-emerald-400 bg-emerald-400/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-300"
+            }`}
+          >
+            Dealer passes
+          </button>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm text-slate-400">False win penalty (詐糊)</h2>
+        <div role="radiogroup" className="flex flex-col gap-2">
+          {falseWinOptions.map((o) => (
+            <button
+              key={o.value}
+              role="radio"
+              aria-checked={falseWinPenalty === o.value}
+              onClick={() => setFalseWinPenalty(o.value)}
+              className={`flex min-h-12 flex-col items-start rounded-xl border px-3 py-2 text-left ${
+                falseWinPenalty === o.value
+                  ? "border-emerald-400 bg-emerald-400/10 text-emerald-300"
+                  : "border-slate-700 bg-slate-800 text-slate-300"
+              }`}
+            >
+              <span className="text-sm font-semibold">{o.label}</span>
+              <span className="text-xs text-slate-400">{o.detail}</span>
+            </button>
+          ))}
+        </div>
+        {falseWinPenalty === "flat" && (
+          <label className="flex items-center justify-between gap-3 text-sm text-slate-300">
+            Points to each other player
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={falseWinFlatPoints}
+              onChange={(e) => setFalseWinFlatPoints(Math.max(0, Number(e.target.value)))}
+              className="w-24 min-w-0 rounded-xl border border-slate-700 bg-slate-800 p-3 text-right text-lg tabular-nums"
+            />
+          </label>
+        )}
+        <p className="text-xs text-slate-500">
+          The false winner pays {falseWinEach} pts to each other player ({falseWinEach * 3} pts in total).
+        </p>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm text-slate-400">After a false win</h2>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setDealerStaysOnFalseWin(true)}
+            className={`rounded-xl border p-3 text-sm font-semibold ${
+              dealerStaysOnFalseWin ? "border-emerald-400 bg-emerald-400/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-300"
+            }`}
+          >
+            Dealer stays
+          </button>
+          <button
+            onClick={() => setDealerStaysOnFalseWin(false)}
+            className={`rounded-xl border p-3 text-sm font-semibold ${
+              !dealerStaysOnFalseWin ? "border-emerald-400 bg-emerald-400/10 text-emerald-300" : "border-slate-700 bg-slate-800 text-slate-300"
             }`}
           >
             Dealer passes

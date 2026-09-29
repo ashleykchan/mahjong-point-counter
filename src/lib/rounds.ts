@@ -1,5 +1,5 @@
 import type { FaanSelection, GameState, PlayerId, Round, WinMethod } from "../types";
-import { computePayouts } from "./scoring";
+import { computeFalseWinPayouts, computePayouts } from "./scoring";
 import { replayWindForward } from "./wind";
 
 export interface RoundEdit {
@@ -7,6 +7,8 @@ export interface RoundEdit {
   winnerId?: PlayerId;
   method?: WinMethod;
   discarderId?: PlayerId;
+  /** Set (with isDraw false) to make the round a false win by this player. */
+  falseWinnerId?: PlayerId;
   faan?: number;
   /** Calculator inputs behind `faan`; omitted when faan was entered manually. */
   faanCalc?: FaanSelection;
@@ -18,25 +20,30 @@ export function withEditedRound(game: GameState, roundId: string, edit: RoundEdi
   const original = game.rounds[index];
   if (!original || original.isAdjustment) return game.rounds;
 
-  const payouts = edit.isDraw
-    ? []
-    : computePayouts(game.ruleSet, game.players, edit.winnerId!, edit.method!, edit.faan!, edit.discarderId);
+  const isFalseWin = !edit.isDraw && edit.falseWinnerId !== undefined;
+  const isWin = !edit.isDraw && !isFalseWin;
+  const payouts = isFalseWin
+    ? computeFalseWinPayouts(game.ruleSet, game.players, edit.falseWinnerId!)
+    : isWin
+      ? computePayouts(game.ruleSet, game.players, edit.winnerId!, edit.method!, edit.faan!, edit.discarderId)
+      : [];
 
   const updated: Round = {
     ...original,
     isDraw: edit.isDraw,
-    winnerId: edit.isDraw ? undefined : edit.winnerId,
-    method: edit.isDraw ? undefined : edit.method,
-    discarderId: edit.isDraw ? undefined : edit.discarderId,
-    faan: edit.isDraw ? undefined : edit.faan,
-    faanCalc: edit.isDraw ? undefined : edit.faanCalc,
+    winnerId: isWin ? edit.winnerId : undefined,
+    method: isWin ? edit.method : undefined,
+    discarderId: isWin ? edit.discarderId : undefined,
+    falseWinnerId: isFalseWin ? edit.falseWinnerId : undefined,
+    faan: isWin ? edit.faan : undefined,
+    faanCalc: isWin ? edit.faanCalc : undefined,
     payouts,
     edited: true,
   };
 
   const rounds = game.rounds.slice();
   rounds[index] = updated;
-  return replayWindForward(rounds, index, game.players, game.ruleSet.dealerStaysOnDraw);
+  return replayWindForward(rounds, index, game.players, game.ruleSet);
 }
 
 /** Pure: returns the game's rounds with one round removed and wind replayed forward from that point. */
@@ -46,7 +53,7 @@ export function withDeletedRound(game: GameState, roundId: string): Round[] {
 
   const rounds = game.rounds.slice();
   rounds.splice(index, 1);
-  return replayWindForward(rounds, index, game.players, game.ruleSet.dealerStaysOnDraw);
+  return replayWindForward(rounds, index, game.players, game.ruleSet);
 }
 
 /** Pure: returns the game's rounds without the most recent entry. Scores and wind are both derived from the rounds, so they roll back together. */

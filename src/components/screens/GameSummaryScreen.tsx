@@ -186,6 +186,8 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
                   <dd className="text-right tabular-nums">{s.averageFaanPerWin ?? "–"}</dd>
                   <dt className="text-slate-500">Times as dealer</dt>
                   <dd className="text-right tabular-nums">{s.timesAsDealer}</dd>
+                  <dt className="text-slate-500">False wins</dt>
+                  <dd className={`text-right tabular-nums ${s.falseWins > 0 ? "text-rose-400" : ""}`}>{s.falseWins}</dd>
                 </dl>
               </div>
             );

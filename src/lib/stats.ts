@@ -9,6 +9,8 @@ export interface PlayerStats {
   biggestHandFaan: number | null;
   averageFaanPerWin: number | null;
   timesAsDealer: number;
+  /** Times this player declared a false win (詐糊). */
+  falseWins: number;
 }
 
 export interface GameStats {
@@ -36,6 +38,7 @@ export function computeGameStats(game: GameState): GameStats {
       biggestHandFaan: null,
       averageFaanPerWin: null,
       timesAsDealer: 0,
+      falseWins: 0,
     };
   }
 
@@ -46,6 +49,12 @@ export function computeGameStats(game: GameState): GameStats {
   for (const round of rounds) {
     const dealerId = game.players[round.windBefore.dealerIndex]?.id;
     if (dealerId && perPlayer[dealerId]) perPlayer[dealerId].timesAsDealer += 1;
+
+    // A false win is a hand played, but never a win or a candidate for the biggest hand.
+    if (round.falseWinnerId) {
+      if (perPlayer[round.falseWinnerId]) perPlayer[round.falseWinnerId].falseWins += 1;
+      continue;
+    }
 
     if (round.isDraw) {
       totalDraws += 1;

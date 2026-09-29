@@ -36,6 +36,9 @@ export function defaultRuleSet(): RuleSet {
     selfDrawMultiplier: 0.5,
     dealInMultiplier: 1,
     dealerStaysOnDraw: true,
+    falseWinPenalty: "min-self-draw",
+    falseWinFlatPoints: 8,
+    dealerStaysOnFalseWin: true,
     handPatterns: defaultHandPatterns(),
   };
 }
@@ -53,6 +56,9 @@ export function doublingRuleSet(): RuleSet {
     selfDrawMultiplier: 1,
     dealInMultiplier: 1,
     dealerStaysOnDraw: true,
+    falseWinPenalty: "min-self-draw",
+    falseWinFlatPoints: 8,
+    dealerStaysOnFalseWin: true,
     handPatterns: defaultHandPatterns(),
   };
 }

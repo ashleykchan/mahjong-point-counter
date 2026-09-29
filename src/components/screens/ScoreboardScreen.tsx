@@ -11,6 +11,7 @@ interface ScoreboardScreenProps {
   game: GameState;
   onRecordHand: () => void;
   onDraw: () => void;
+  onFalseWin: () => void;
   onOpenHistory: () => void;
   onOpenRules: () => void;
   onOpenMoney: () => void;
@@ -24,6 +25,7 @@ export function ScoreboardScreen({
   game,
   onRecordHand,
   onDraw,
+  onFalseWin,
   onOpenHistory,
   onOpenRules,
   onOpenMoney,
@@ -33,6 +35,7 @@ export function ScoreboardScreen({
   onDismissCycleNotice,
 }: ScoreboardScreenProps) {
   const [confirmingEnd, setConfirmingEnd] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const standings = computeStandings(game);
   const wind = getCurrentWind(game);
   const maxScore = Math.max(...game.players.map((p) => standings[p.id] ?? 0));
@@ -134,6 +137,37 @@ export function ScoreboardScreen({
         </div>
       )}
 
+      {moreOpen && (
+        <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/60 p-4" onClick={() => setMoreOpen(false)}>
+          <div
+            role="menu"
+            className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-slate-700 bg-slate-800 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="px-1 text-sm font-semibold uppercase tracking-wide text-slate-400">More results</h2>
+            <button
+              role="menuitem"
+              onClick={() => {
+                setMoreOpen(false);
+                onFalseWin();
+              }}
+              className="flex flex-col items-start rounded-xl border border-rose-800 bg-rose-950/40 p-4 text-left active:bg-rose-950"
+            >
+              <span className="text-base font-semibold text-rose-300">
+                False Win <span className="font-normal text-rose-300/70">詐糊</span>
+              </span>
+              <span className="text-xs text-slate-400">Someone declared a win they didn't have and pays everyone</span>
+            </button>
+            <button
+              onClick={() => setMoreOpen(false)}
+              className="rounded-xl border border-slate-600 p-3 text-sm font-semibold text-slate-300 active:bg-slate-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       <FixedBottomBar className="flex flex-col gap-2">
         <button
           onClick={onRecordHand}
@@ -141,12 +175,21 @@ export function ScoreboardScreen({
         >
           Record Hand
         </button>
-        <button
-          onClick={onDraw}
-          className="w-full rounded-xl border border-slate-600 p-3 text-base font-semibold text-slate-300 active:bg-slate-800"
-        >
-          Draw / No Winner
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onDraw}
+            className="flex-1 rounded-xl border border-slate-600 p-3 text-base font-semibold text-slate-300 active:bg-slate-800"
+          >
+            Draw / No Winner
+          </button>
+          <button
+            onClick={() => setMoreOpen(true)}
+            aria-haspopup="menu"
+            className="rounded-xl border border-slate-600 px-4 text-base font-semibold text-slate-300 active:bg-slate-800"
+          >
+            More&hellip;
+          </button>
+        </div>
       </FixedBottomBar>
     </div>
   );

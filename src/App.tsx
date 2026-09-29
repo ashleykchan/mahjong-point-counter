@@ -9,12 +9,13 @@ import { RuleLibraryScreen } from "./components/screens/RuleLibraryScreen";
 import { AdjustWindScreen } from "./components/screens/AdjustWindScreen";
 import { MoneySettingScreen } from "./components/screens/MoneySettingScreen";
 import { GameSummaryScreen } from "./components/screens/GameSummaryScreen";
+import { FalseWinScreen } from "./components/screens/FalseWinScreen";
 import { computePayouts } from "./lib/scoring";
 import { withDeletedRound, withEditedRound, type RoundEdit } from "./lib/rounds";
 import { completedFullCycle, getCurrentWind, nextWindState } from "./lib/wind";
 import type { GameState, PlayerId, WinMethod } from "./types";
 
-type View = "setup" | "scoreboard" | "record" | "history" | "editRound" | "rules" | "money" | "adjustWind";
+type View = "setup" | "scoreboard" | "record" | "falseWin" | "history" | "editRound" | "rules" | "money" | "adjustWind";
 
 function AppShell() {
   const {
@@ -25,6 +26,7 @@ function AppShell() {
     finishGame,
     recordHand,
     recordDraw,
+    recordFalseWin,
     undoLastRound,
     editRound,
     deleteRound,
@@ -152,9 +154,25 @@ function AppShell() {
         onCancel={() => setView("scoreboard")}
         onConfirm={(winnerId: PlayerId, method: WinMethod, faan: number, discarderId: PlayerId | undefined, faanCalc) => {
           const windBefore = getCurrentWind(game);
-          const windAfter = nextWindState(windBefore, game.players, { isDraw: false, winnerId }, game.ruleSet.dealerStaysOnDraw);
+          const windAfter = nextWindState(windBefore, game.players, { isDraw: false, winnerId }, game.ruleSet);
           const payouts = computePayouts(game.ruleSet, game.players, winnerId, method, faan, discarderId);
           recordHand(winnerId, method, faan, discarderId, payouts, faanCalc);
+          setView("scoreboard");
+          if (completedFullCycle({ windBefore, windAfter })) setJustCompletedCycle(true);
+        }}
+      />
+    );
+  }
+
+  if (view === "falseWin") {
+    return (
+      <FalseWinScreen
+        game={game}
+        onCancel={() => setView("scoreboard")}
+        onConfirm={(falseWinnerId) => {
+          const windBefore = getCurrentWind(game);
+          const windAfter = nextWindState(windBefore, game.players, { isDraw: false, falseWinnerId }, game.ruleSet);
+          recordFalseWin(falseWinnerId);
           setView("scoreboard");
           if (completedFullCycle({ windBefore, windAfter })) setJustCompletedCycle(true);
         }}
@@ -193,9 +211,10 @@ function AppShell() {
     <ScoreboardScreen
       game={game}
       onRecordHand={() => setView("record")}
+      onFalseWin={() => setView("falseWin")}
       onDraw={() => {
         const windBefore = getCurrentWind(game);
-        const windAfter = nextWindState(windBefore, game.players, { isDraw: true }, game.ruleSet.dealerStaysOnDraw);
+        const windAfter = nextWindState(windBefore, game.players, { isDraw: true }, game.ruleSet);
         recordDraw();
         if (completedFullCycle({ windBefore, windAfter })) setJustCompletedCycle(true);
       }}

@@ -1,4 +1,4 @@
-import type { GameState, Player, PlayerId, Round, WindIndex, WindState } from "../types";
+import type { GameState, Player, PlayerId, Round, RuleSet, WindIndex, WindState } from "../types";
 
 export const WIND_LABELS: Record<WindIndex, string> = {
   0: "East",
@@ -31,6 +31,15 @@ export function getCurrentWind(game: GameState): WindState {
 interface HandOutcome {
   isDraw: boolean;
   winnerId?: PlayerId;
+  falseWinnerId?: PlayerId;
+}
+
+/** The rule-set settings that decide whether the dealer keeps their seat. */
+export type DealerRules = Pick<RuleSet, "dealerStaysOnDraw" | "dealerStaysOnFalseWin">;
+
+/** The parts of a round that decide the wind transition. */
+export function outcomeOf(round: Pick<Round, "isDraw" | "winnerId" | "falseWinnerId">): HandOutcome {
+  return { isDraw: round.isDraw, winnerId: round.winnerId, falseWinnerId: round.falseWinnerId };
 }
 
 /** Pure transition: given the wind state a hand was played under, what state results from its outcome. */
@@ -38,11 +47,13 @@ export function nextWindState(
   current: WindState,
   players: Player[],
   outcome: HandOutcome,
-  dealerStaysOnDraw: boolean,
+  rules: DealerRules,
 ): WindState {
   const dealerId = players[current.dealerIndex]?.id;
   const winnerIsDealer = !outcome.isDraw && outcome.winnerId === dealerId;
-  const dealerStays = winnerIsDealer || (outcome.isDraw && dealerStaysOnDraw);
+  const dealerStays = outcome.falseWinnerId
+    ? (rules.dealerStaysOnFalseWin ?? true)
+    : winnerIsDealer || (outcome.isDraw && rules.dealerStaysOnDraw);
 
   if (dealerStays) {
     return { ...current, repeatCount: current.repeatCount + 1 };
@@ -70,7 +81,7 @@ export function replayWindForward(
   rounds: Round[],
   fromIndex: number,
   players: Player[],
-  dealerStaysOnDraw: boolean,
+  rules: DealerRules,
 ): Round[] {
   if (fromIndex >= rounds.length) return rounds;
   const result = rounds.slice();
@@ -80,7 +91,7 @@ export function replayWindForward(
     const windBefore = currentWind;
     const windAfter = round.isAdjustment
       ? round.windAfter
-      : nextWindState(windBefore, players, { isDraw: round.isDraw, winnerId: round.winnerId }, dealerStaysOnDraw);
+      : nextWindState(windBefore, players, outcomeOf(round), rules);
     result[i] = { ...round, windBefore, windAfter };
     currentWind = windAfter;
   }

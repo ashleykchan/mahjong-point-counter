@@ -251,9 +251,12 @@ export interface FaanInputState {
   selection: FaanSelection;
 }
 
-/** How Edit Round opens: calculated rounds reopen in the calculator with the same boxes ticked; manual rounds stay manual. */
+/**
+ * How Edit Round opens: calculated rounds reopen in the calculator with the same boxes ticked; manually scored
+ * wins stay manual. Draws and false wins have no faan, so they use the remembered mode.
+ */
 export function initialFaanInput(round: Round, rememberedMode: FaanInputMode): FaanInputState {
   if (round.faanCalc) return { mode: "automatic", selection: structuredClone(round.faanCalc) };
-  if (!round.isDraw) return { mode: "manual", selection: emptySelection() };
+  if (!round.isDraw && !round.falseWinnerId) return { mode: "manual", selection: emptySelection() };
   return { mode: rememberedMode, selection: emptySelection() };
 }
