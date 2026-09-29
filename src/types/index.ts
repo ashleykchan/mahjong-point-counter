@@ -61,6 +61,8 @@ export interface Round {
   windBefore: WindState;
   /** Resulting wind/dealer state after this round (or the manually-set state, for an adjustment). */
   windAfter: WindState;
+  /** True once this round's outcome has been changed via the Round History editor. */
+  edited?: boolean;
 }
 
 export interface GameState {

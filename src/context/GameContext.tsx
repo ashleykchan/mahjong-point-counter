@@ -3,6 +3,7 @@ import type { GameState, Payout, Player, PlayerId, Round, RuleSet, WindState, Wi
 import { loadGame, loadRuleSets, saveGame, saveRuleSets } from "../lib/storage";
 import { defaultRuleSet } from "../lib/defaultRules";
 import { getCurrentWind, nextWindState } from "../lib/wind";
+import { withDeletedRound, withEditedRound, type RoundEdit } from "../lib/rounds";
 
 interface GameContextValue {
   game: GameState | null;
@@ -26,6 +27,8 @@ interface GameContextValue {
   ) => void;
   recordDraw: () => void;
   undoLastRound: () => void;
+  editRound: (roundId: string, edit: RoundEdit) => void;
+  deleteRound: (roundId: string) => void;
   adjustWind: (next: WindState) => void;
   setMoneyPerPoint: (value: number) => void;
   upsertRuleSet: (ruleSet: RuleSet) => void;
@@ -113,6 +116,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
           if (!prev || prev.rounds.length === 0) return prev;
           return { ...prev, rounds: prev.rounds.slice(0, -1) };
         });
+      },
+      editRound: (roundId, edit) => {
+        setGame((prev) => (prev ? { ...prev, rounds: withEditedRound(prev, roundId, edit) } : prev));
+      },
+      deleteRound: (roundId) => {
+        setGame((prev) => (prev ? { ...prev, rounds: withDeletedRound(prev, roundId) } : prev));
       },
       adjustWind: (next) => {
         setGame((prev) => {

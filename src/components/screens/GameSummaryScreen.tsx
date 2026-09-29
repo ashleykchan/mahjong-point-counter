@@ -8,6 +8,7 @@ interface GameSummaryScreenProps {
   game: GameState;
   onStartNewGameSamePlayers: () => void;
   onNewGameFromScratch: () => void;
+  onOpenHistory: () => void;
 }
 
 function formatDuration(ms: number): string {
@@ -18,7 +19,7 @@ function formatDuration(ms: number): string {
   return `${hours}h ${minutes}m`;
 }
 
-export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFromScratch }: GameSummaryScreenProps) {
+export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFromScratch, onOpenHistory }: GameSummaryScreenProps) {
   const nameOf = (id: string) => game.players.find((p) => p.id === id)?.name ?? "?";
   const standings = computeStandings(game);
   const stats = computeGameStats(game);
@@ -32,11 +33,16 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
-      <header className="pt-4">
-        <h1 className="text-2xl font-bold">Game Summary</h1>
-        <p className="text-sm text-slate-400">
-          {stats.totalHandsPlayed} hands &middot; {stats.totalDraws} draws &middot; {formatDuration(stats.gameLengthMs)}
-        </p>
+      <header className="flex items-start justify-between pt-4">
+        <div>
+          <h1 className="text-2xl font-bold">Game Summary</h1>
+          <p className="text-sm text-slate-400">
+            {stats.totalHandsPlayed} hands &middot; {stats.totalDraws} draws &middot; {formatDuration(stats.gameLengthMs)}
+          </p>
+        </div>
+        <button onClick={onOpenHistory} className="text-sm font-semibold text-amber-400 underline underline-offset-2">
+          Round History
+        </button>
       </header>
 
       <section className="flex flex-col gap-2">
