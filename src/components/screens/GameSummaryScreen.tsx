@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import type { GameState } from "../../types";
 import { computeStandings } from "../../lib/scoring";
 import { computeGameStats } from "../../lib/stats";
 import { settleUp } from "../../lib/settleUp";
 import { formatMoney, pointsToMoney } from "../../lib/money";
+import { buildGameSummaryText } from "../../lib/gameSummaryText";
 
 interface GameSummaryScreenProps {
   game: GameState;
@@ -31,6 +33,38 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
     ? settleUp(game.players.map((p) => ({ id: p.id, amount: pointsToMoney(standings[p.id] ?? 0, game.moneyPerPoint) })))
     : [];
 
+  const summaryText = buildGameSummaryText(game);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  useEffect(() => {
+    if (copyState !== "copied") return;
+    const timeout = setTimeout(() => setCopyState("idle"), 2000);
+    return () => clearTimeout(timeout);
+  }, [copyState]);
+
+  async function handleCopy() {
+    try {
+      // Some browser/permission combinations leave this promise pending forever instead of
+      // rejecting, so race it against a timeout to guarantee the user always gets feedback.
+      await Promise.race([
+        navigator.clipboard.writeText(summaryText),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("clipboard timed out")), 1500)),
+      ]);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  }
+
+  async function handleShare() {
+    try {
+      await navigator.share({ text: summaryText });
+    } catch {
+      // User cancelled the share sheet, or it failed silently — nothing to do.
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 bg-slate-900 p-4 pb-28 text-slate-100">
       <header className="flex items-start justify-between pt-4">
@@ -44,6 +78,38 @@ export function GameSummaryScreen({ game, onStartNewGameSamePlayers, onNewGameFr
           Round History
         </button>
       </header>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Copy Summary</h2>
+        <textarea
+          readOnly
+          value={summaryText}
+          onFocus={(e) => e.currentTarget.select()}
+          rows={Math.min(Math.max(summaryText.split("\n").length, 8), 20)}
+          className="w-full resize-none rounded-xl border border-slate-700 bg-slate-800 p-3 font-mono text-xs leading-relaxed text-slate-200"
+        />
+        {copyState === "failed" && (
+          <p className="text-xs text-amber-400">
+            Couldn't copy automatically &ndash; tap the text above to select it, then copy manually.
+          </p>
+        )}
+        <div className="flex gap-2">
+          <button
+            onClick={handleCopy}
+            className="flex-1 rounded-xl bg-emerald-500 p-3 text-sm font-bold text-emerald-950 active:bg-emerald-400"
+          >
+            {copyState === "copied" ? "Copied!" : "Copy Summary"}
+          </button>
+          {canShare && (
+            <button
+              onClick={handleShare}
+              className="flex-1 rounded-xl border border-slate-600 p-3 text-sm font-semibold text-slate-200 active:bg-slate-800"
+            >
+              Share
+            </button>
+          )}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Final Standings</h2>
