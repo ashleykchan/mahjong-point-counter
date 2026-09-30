@@ -5,6 +5,9 @@ import { getCurrentWind, seatWindLabel, WIND_LABELS } from "../../lib/wind";
 import { pointsToMoney } from "../../lib/money";
 import { PlayerCard } from "../PlayerCard";
 import { WindBanner } from "../WindBanner";
+import { TableCenter, TableDiamond } from "../TableDiamond";
+import { nextRotation } from "../../lib/seating";
+import { loadTableRotation, saveTableRotation } from "../../lib/storage";
 import { FixedBottomBar } from "../FixedBottomBar";
 
 interface ScoreboardScreenProps {
@@ -36,10 +39,17 @@ export function ScoreboardScreen({
 }: ScoreboardScreenProps) {
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [rotation, setRotation] = useState(() => loadTableRotation(game.id));
   const standings = computeStandings(game);
   const wind = getCurrentWind(game);
   const maxScore = Math.max(...game.players.map((p) => standings[p.id] ?? 0));
   const hasMoney = game.moneyPerPoint > 0;
+
+  function rotate() {
+    const next = nextRotation(rotation);
+    setRotation(next);
+    saveTableRotation(game.id, next);
+  }
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 bg-slate-900 p-4 text-slate-100">
@@ -52,12 +62,25 @@ export function ScoreboardScreen({
 
       <WindBanner wind={wind} players={game.players} onAdjust={onAdjustWind} />
 
-      <div className="grid grid-cols-2 gap-3">
-        {game.players.map((p, i) => {
+      <TableDiamond
+        rotation={rotation}
+        center={<TableCenter wind={wind.prevailingWind} onClick={onAdjustWind} />}
+        corner={
+          <button
+            type="button"
+            onClick={rotate}
+            aria-label="Rotate table view"
+            title="Rotate so another seat is at the bottom"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-xl text-slate-300 active:bg-slate-700"
+          >
+            &#8635;
+          </button>
+        }
+        renderSeat={(i) => {
+          const p = game.players[i];
           const score = standings[p.id] ?? 0;
           return (
             <PlayerCard
-              key={p.id}
               name={p.name}
               score={score}
               isLeader={score === maxScore && score !== 0}
@@ -66,8 +89,8 @@ export function ScoreboardScreen({
               money={hasMoney ? pointsToMoney(score, game.moneyPerPoint) : undefined}
             />
           );
-        })}
-      </div>
+        }}
+      />
 
       <div className="flex gap-3">
         <button

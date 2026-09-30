@@ -3,7 +3,9 @@ import type { FaanSelection, GameState, PlayerId, WinMethod } from "../../types"
 import { computePayouts, pointsForFaan } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { FaanStepper } from "../FaanStepper";
+import { getCurrentWind } from "../../lib/wind";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { SeatPicker } from "../SeatPicker";
 import { FaanCalculatorTable, FaanModeToggle, FaanTotalFooter } from "../FaanCalculator";
 import {
   applyWinMethod,
@@ -50,8 +52,8 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
     saveFaanInputMode(mode);
   }
 
+  const wind = getCurrentWind(game);
   const nameOf = (id: PlayerId) => game.players.find((p) => p.id === id)?.name ?? "?";
-  const others = game.players.filter((p) => p.id !== winnerId);
 
   function back() {
     if (step === "method") setStep("winner");
@@ -93,17 +95,7 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
       {step === "winner" && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who won?</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {game.players.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => chooseWinner(p.id)}
-                className="rounded-2xl border border-slate-700 bg-slate-800 p-6 text-lg font-semibold active:bg-slate-700"
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
+          <SeatPicker gameId={game.id} players={game.players} wind={wind} onPick={chooseWinner} />
         </section>
       )}
 
@@ -130,17 +122,14 @@ export function RecordHandScreen({ game, onConfirm, onCancel }: RecordHandScreen
       {step === "discarder" && winnerId && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who discarded?</h2>
-          <div className="grid grid-cols-1 gap-3">
-            {others.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => chooseDiscarder(p.id)}
-                className="rounded-2xl border border-slate-700 bg-slate-800 p-6 text-lg font-semibold active:bg-slate-700"
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
+          <SeatPicker
+            gameId={game.id}
+            players={game.players}
+            wind={wind}
+            disabledId={winnerId}
+            disabledLabel="Winner"
+            onPick={chooseDiscarder}
+          />
         </section>
       )}
 
