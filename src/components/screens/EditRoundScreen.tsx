@@ -7,6 +7,7 @@ import { formatMoney, pointsToMoney } from "../../lib/money";
 import { WIND_LABELS } from "../../lib/wind";
 import { FaanStepper } from "../FaanStepper";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { SeatPicker } from "../SeatPicker";
 import { FaanCalculatorTable, FaanModeToggle, FaanTotalFooter } from "../FaanCalculator";
 import {
   applyWinMethod,
@@ -61,7 +62,6 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
 
   const nameOf = (id?: PlayerId) => game.players.find((p) => p.id === id)?.name ?? "?";
   const dealerName = nameOf(game.players[round.windBefore.dealerIndex]?.id);
-  const others = game.players.filter((p) => p.id !== winnerId);
 
   const isValid =
     result === "draw" ||
@@ -171,21 +171,14 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
       {result === "falseWin" && (
         <section className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who declared the false win?</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {game.players.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setFalseWinnerId(p.id)}
-                className={`rounded-2xl border p-4 text-base font-semibold ${
-                  falseWinnerId === p.id
-                    ? "border-rose-400 bg-rose-400/10 text-rose-300"
-                    : "border-slate-700 bg-slate-800 active:bg-slate-700"
-                }`}
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
+          <SeatPicker
+            gameId={game.id}
+            players={game.players}
+            wind={round.windBefore}
+            selectedId={falseWinnerId}
+            tone="rose"
+            onPick={setFalseWinnerId}
+          />
           <p className="text-sm text-slate-400">
             Pays {falseWinPenaltyEach(game.ruleSet)} pts to each other player.
           </p>
@@ -196,21 +189,13 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
         <>
           <section className="flex flex-col gap-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who won?</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {game.players.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => chooseWinner(p.id)}
-                  className={`rounded-2xl border p-4 text-base font-semibold ${
-                    winnerId === p.id
-                      ? "border-emerald-400 bg-emerald-400/10 text-emerald-300"
-                      : "border-slate-700 bg-slate-800 active:bg-slate-700"
-                  }`}
-                >
-                  {p.name}
-                </button>
-              ))}
-            </div>
+            <SeatPicker
+              gameId={game.id}
+              players={game.players}
+              wind={round.windBefore}
+              selectedId={winnerId}
+              onPick={chooseWinner}
+            />
           </section>
 
           <section className="flex flex-col gap-3">
@@ -242,21 +227,15 @@ export function EditRoundScreen({ game, round, roundNumber, onSave, onCancel, on
           {method === "discard" && (
             <section className="flex flex-col gap-3">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Who discarded?</h2>
-              <div className="grid grid-cols-1 gap-3">
-                {others.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setDiscarderId(p.id)}
-                    className={`rounded-2xl border p-4 text-base font-semibold ${
-                      discarderId === p.id
-                        ? "border-emerald-400 bg-emerald-400/10 text-emerald-300"
-                        : "border-slate-700 bg-slate-800 active:bg-slate-700"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                ))}
-              </div>
+              <SeatPicker
+                gameId={game.id}
+                players={game.players}
+                wind={round.windBefore}
+                selectedId={discarderId}
+                disabledId={winnerId}
+                disabledLabel="Winner"
+                onPick={setDiscarderId}
+              />
             </section>
           )}
 

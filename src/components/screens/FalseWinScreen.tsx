@@ -4,6 +4,7 @@ import { computeFalseWinPayouts } from "../../lib/scoring";
 import { formatMoney, pointsToMoney } from "../../lib/money";
 import { getCurrentWind } from "../../lib/wind";
 import { FixedBottomBar } from "../FixedBottomBar";
+import { SeatPicker } from "../SeatPicker";
 
 interface FalseWinScreenProps {
   game: GameState;
@@ -40,17 +41,7 @@ export function FalseWinScreen({ game, onConfirm, onCancel }: FalseWinScreenProp
           <p className="text-sm text-slate-500">
             A player who declares a win under the minimum faan, or with an invalid hand, pays every other player.
           </p>
-          <div className="grid grid-cols-2 gap-3">
-            {game.players.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setFalseWinnerId(p.id)}
-                className="rounded-2xl border border-slate-700 bg-slate-800 p-6 text-lg font-semibold active:bg-slate-700"
-              >
-                {p.name}
-              </button>
-            ))}
-          </div>
+          <SeatPicker gameId={game.id} players={game.players} wind={getCurrentWind(game)} tone="rose" onPick={setFalseWinnerId} />
         </section>
       ) : (
         <section className="flex flex-col gap-4">
